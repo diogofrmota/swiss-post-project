@@ -1,0 +1,11 @@
+# Go build artefacts
+operator/bin/
+operator/cover.out
+operator/vendor/
+
+# Secrets
+*.key
+*.pem
+*.crt
+secrets/
+sealed-secrets/

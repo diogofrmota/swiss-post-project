@@ -24,7 +24,7 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | Kyverno | Policy enforcement |
 | Prometheus | Metrics & alerting |
 | Grafana | Dashboards & observability |
-| GitHub Actions | CI — build & push images |
+| GitHub Actions | CI - build & push images |
 | Golang | Custom operator |
 
 ## Repository Layout
@@ -65,6 +65,5 @@ After step 3, Argo CD takes over and reconciles every application defined in `ap
 ## GitOps Workflow
 
 ```
-git push → GitHub Actions builds image → updates image tag in repo
-         → Argo CD detects diff → rolls out new version
+git push → GitHub Actions builds image → updates image tag in repo → Argo CD detects diff → rolls out new version
 ```
