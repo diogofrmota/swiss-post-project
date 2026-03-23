@@ -5,17 +5,16 @@ set -euo pipefail
 
 ARGOCD_VERSION='v3.3.4' # Taken from https://github.com/argoproj/argo-cd/releases
 REPO_URL='https://github.com/diogofrmota/swiss-post-project'
-NAMESPACE='argocd'
 
-echo 'Creating namespace ${NAMESPACE}'
-kubectl create namespace '${NAMESPACE}' --dry-run=client -o yaml | kubectl apply -f -
+echo 'Creating namespace argocd'
+kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 
 echo 'Installing Argo CD ${ARGOCD_VERSION}'
-kubectl apply -n '${NAMESPACE}' -f \
+kubectl apply -n argocd -f \
   'https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml'
 
 echo 'Waiting for Argo CD server to be ready...'
-kubectl rollout status deployment/argocd-server -n "${NAMESPACE}" --timeout=120s # Only continues after all pods are updated and ready
+kubectl rollout status deployment/argocd-server -n argocd --timeout=120s # Only continues after all pods are updated and ready
 
 echo 'Applying root App of Apps'
 kubectl apply -f gitops-setup/root-app.yaml # Setup Argocd witch will setup the apps (taken from the repo)

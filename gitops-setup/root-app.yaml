@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers: # used to prevents orphaned resources
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source: # source code, where manifests come from. It has the desired state
+    repoURL: https://github.com/diogofrmota/swiss-post-project
+    targetRevision: HEAD
+    path: apps
+  destination: # defining where to apply manifests
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true # deletes resources removed from Git
+      selfHeal: true # to fix drift when i change anything manually
+    syncOptions:
+      - CreateNamespace=true
