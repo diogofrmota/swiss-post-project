@@ -1,0 +1,17 @@
+# infrastructure/base/servicemonitor.yaml
+# Tells Prometheus to scrape the operator's /metrics endpoint.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: custom-operator
+  namespace: custom-operator
+  labels:
+    release: monitoring   # matches kube-prometheus-stack's serviceMonitorSelector
+spec:
+  selector:
+    matchLabels:
+      app: custom-operator
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s

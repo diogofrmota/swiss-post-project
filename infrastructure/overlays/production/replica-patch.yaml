@@ -1,0 +1,10 @@
+# infrastructure/overlays/production/replica-patch.yaml
+# Run a single replica on the homelab to conserve memory.
+# Override to 2 when migrating to a cloud cluster.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: custom-operator
+  namespace: custom-operator
+spec:
+  replicas: 1
