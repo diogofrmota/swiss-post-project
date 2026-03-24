@@ -1,0 +1,64 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base"],
+  "baseBranches": ["main"],
+  "labels": ["dependencies", "automated"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+
+  "packageRules": [
+    {
+      "description": "Group all Kubernetes infrastructure Helm chart updates into one weekly PR",
+      "matchDatasources": ["helm"],
+      "matchPackageNames": [
+        "argo-cd",
+        "cert-manager",
+        "cilium",
+        "kube-prometheus-stack",
+        "kyverno",
+        "metallb"
+      ],
+      "groupName": "k8s-infrastructure-helm-charts",
+      "schedule": ["on monday and thursday"],
+      "automerge": false
+    },
+    {
+      "description": "Auto-merge patch-level updates for non-critical tools",
+      "matchUpdateTypes": ["patch"],
+      "matchDatasources": ["helm"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "schedule": ["on monday"],
+      "automerge": true
+    },
+    {
+      "description": "Go module updates",
+      "matchManagers": ["gomod"],
+      "groupName": "go-dependencies",
+      "schedule": ["on monday"]
+    }
+  ],
+
+  "helm-values": {
+    "fileMatch": ["applications/.*/application\\.yaml$"]
+  },
+
+  "kubernetes": {
+    "fileMatch": ["\\.yaml$"]
+  },
+
+  "regexManagers": [
+    {
+      "description": "Detect Argo CD version in bootstrap script",
+      "fileMatch": ["scripts/argocd-setup\\.sh"],
+      "matchStrings": ["ARGOCD_VERSION='(?<currentValue>[^']+)'"],
+      "depNameTemplate": "argoproj/argo-cd",
+      "datasourceTemplate": "github-releases"
+    }
+  ]
+}

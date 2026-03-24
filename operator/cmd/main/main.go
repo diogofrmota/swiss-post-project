@@ -1,7 +1,3 @@
-// operator/cmd/main/main.go
-// Entrypoint for the custom operator.
-// Sets up the controller-runtime manager, registers the reconciler,
-// and starts the metrics and health probe servers.
 package main
 
 import (
@@ -15,16 +11,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	swisspostv1alpha1 "github.com/<YOUR_USERNAME>/custom-operator/internal/api/v1alpha1"
-	"github.com/<YOUR_USERNAME>/custom-operator/internal/controller"
+	"github.com/diogofrmota/custom-operator/internal/controller"
 )
 
-var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
-)
+var scheme = runtime.NewScheme()
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -33,34 +25,24 @@ func init() {
 }
 
 func main() {
-	var (
-		metricsAddr          string
-		enableLeaderElection bool
-		probeAddr            string
-	)
+	var metricsAddr, probeAddr string
+	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "Metrics endpoint address.")
+	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "Health probe address.")
 
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "Address for the metrics endpoint.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "Address for the health probe endpoint.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
-		"Enable leader election for controller manager (recommended for multi-replica setups).")
-
-	opts := zap.Options{Development: false}
+	opts := zap.Options{}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	log := ctrl.Log.WithName("setup")
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-		Metrics: server.Options{
-			BindAddress: metricsAddr,
-		},
+		Scheme:                 scheme,
+		MetricsBindAddress:     metricsAddr,
 		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "swisspost.io",
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to create manager")
+		log.Error(err, "unable to create manager")
 		os.Exit(1)
 	}
 
@@ -68,22 +50,16 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AppConfig")
+		log.Error(err, "unable to create controller")
 		os.Exit(1)
 	}
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
-		os.Exit(1)
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
-		os.Exit(1)
-	}
+	_ = mgr.AddHealthzCheck("healthz", healthz.Ping)
+	_ = mgr.AddReadyzCheck("readyz", healthz.Ping)
 
-	setupLog.Info("starting manager")
+	log.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+		log.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }
