@@ -1,4 +1,4 @@
-# Default deny all
+# Default deny all ingress and egress for the golang-scraper namespace
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -9,7 +9,7 @@ spec:
   ingress: []
   egress: []
 ---
-# Allow Prometheus to scrape
+# Allow Prometheus to scrape metrics from the scraper pod
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -28,7 +28,7 @@ spec:
             - port: "8080"
               protocol: TCP
 ---
-# Allow egress to the HN API (HTTPS)
+# Allow egress to the Golang Scrapper API (HTTPS)
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
