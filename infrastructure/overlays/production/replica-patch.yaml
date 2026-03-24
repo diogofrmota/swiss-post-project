@@ -5,5 +5,3 @@ metadata:
   namespace: custom-operator
 spec:
   replicas: 1
-
-

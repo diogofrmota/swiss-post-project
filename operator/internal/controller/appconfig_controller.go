@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	swisspostv1alpha1 "github.com/diogofrmota/custom-operator/internal/api/v1alpha1"
+	swisspostv1alpha1 "github.com/diogofrmota/swiss-post-project/custom-operator/internal/api/v1alpha1"
 )
 
 // AppConfigReconciler reconciles AppConfig objects.

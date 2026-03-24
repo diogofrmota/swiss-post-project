@@ -29,7 +29,9 @@ spec:
                       storage: 10Gi
 
         grafana:
-          adminPassword: changeme   # TODO: replace with a Secret reference
+          admin:
+            existingSecret: grafana-admin-secret
+            passwordKey: admin-password
           service:
             type: LoadBalancer
           resources:

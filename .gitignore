@@ -3,6 +3,9 @@ operator/bin/
 operator/cover.out
 operator/vendor/
 
+# Environment variables
+.env
+
 # Secrets
 *.key
 *.pem

@@ -14,5 +14,3 @@ images:
 patches:
   - path: replica-patch.yaml
   - path: resource-patch.yaml
-
-
