@@ -1,0 +1,48 @@
+# operator/.golangci.yaml
+# golangci-lint configuration for the custom operator.
+
+run:
+  timeout: 5m
+  go: "1.22"
+
+linters:
+  enable:
+    - errcheck        # Check that errors are handled
+    - gosimple        # Simplifications
+    - govet           # Suspicious constructs
+    - ineffassign     # Detect ineffectual assignments
+    - staticcheck     # Staticcheck suite
+    - unused          # Unused code
+    - gofmt           # Formatting
+    - goimports       # Import ordering
+    - misspell        # Spelling mistakes
+    - revive          # Drop-in replacement for golint
+    - exhaustive      # Exhaustive switch statements on enums
+    - noctx           # HTTP requests without context
+    - bodyclose       # HTTP response body not closed
+    - contextcheck    # Context passed correctly
+    - unparam         # Unused function parameters
+    - dupl            # Code duplication
+    - gocritic        # Opinionated checks
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/<YOUR_USERNAME>/custom-operator
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+  misspell:
+    locale: US
+  dupl:
+    threshold: 150
+
+issues:
+  exclude-rules:
+    # Test files can use Gomega dot-imports and longer functions
+    - path: "_test\\.go"
+      linters:
+        - dupl
+        - unparam
