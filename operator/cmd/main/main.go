@@ -1,3 +1,5 @@
+// operator/cmd/main/main.go
+// Entrypoint for the AppConfig custom operator.
 package main
 
 import (
@@ -12,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	swisspostv1alpha1 "github.com/<YOUR_USERNAME>/custom-operator/internal/api/v1alpha1"
+	swisspostv1alpha1 "github.com/diogofrmota/custom-operator/internal/api/v1alpha1"
 	"github.com/diogofrmota/custom-operator/internal/controller"
 )
 
@@ -63,3 +65,5 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+

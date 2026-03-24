@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	swisspostv1alpha1 "github.com/<YOUR_USERNAME>/custom-operator/internal/api/v1alpha1"
+	swisspostv1alpha1 "github.com/diogofrmota/custom-operator/internal/api/v1alpha1"
 )
 
 // AppConfigReconciler reconciles AppConfig objects.
@@ -127,3 +127,5 @@ func (r *AppConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func boolPtr(b bool) *bool { return &b }
+
+

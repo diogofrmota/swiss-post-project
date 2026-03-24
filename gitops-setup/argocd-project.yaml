@@ -1,5 +1,5 @@
 apiVersion: argoproj.io/v1alpha1
-kind: AppProject # Limits which source repos and destination clusters/namespaces are allowed.
+kind: AppProject
 metadata:
   name: homelab
   namespace: argocd
@@ -8,7 +8,6 @@ metadata:
 spec:
   description: Homelab cluster workloads
 
-  # Only this repository may be used as a source
   sourceRepos:
     - https://github.com/diogofrmota/swiss-post-project
     - https://helm.cilium.io
@@ -18,20 +17,19 @@ spec:
     - https://metallb.github.io/metallb
     - https://kyverno.github.io/kyverno
 
-  # Only the local cluster is a valid destination
   destinations:
     - server: https://kubernetes.default.svc
       namespace: '*'
 
-  # Allow all core resource kinds
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
 
-  # Prevent accidental deletion of live resources
   syncWindows:
-    - kind: deny # created for testing/ showcase, since this is a home server I will not be need a maintenance window
-      schedule: '0 2 * * *'    # deny syncs between 02:00–03:00 (maintenance window)
+    - kind: deny
+      schedule: '0 2 * * *'
       duration: 1h
       namespaces:
         - kube-system
+
+

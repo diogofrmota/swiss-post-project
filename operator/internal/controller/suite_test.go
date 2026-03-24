@@ -1,6 +1,5 @@
 // operator/internal/controller/suite_test.go
 // Bootstraps the envtest environment used by all controller tests.
-// envtest spins up a real API server and etcd locally — no real cluster needed.
 package controller
 
 import (
@@ -19,7 +18,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	swisspostv1alpha1 "github.com/<YOUR_USERNAME>/custom-operator/internal/api/v1alpha1"
+	swisspostv1alpha1 "github.com/diogofrmota/custom-operator/internal/api/v1alpha1"
 )
 
 var (
@@ -56,7 +55,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	// Start the reconciler inside the test manager
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 

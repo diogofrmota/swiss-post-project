@@ -31,7 +31,7 @@ spec:
                       storage: 10Gi
 
         grafana:
-          adminPassword: changeme   # TODO
+          adminPassword: changeme   # TODO: replace with a Secret reference
           service:
             type: LoadBalancer
           resources:
@@ -40,7 +40,6 @@ spec:
               memory: 128Mi
             limits:
               memory: 256Mi
-          # Pre-load community dashboards
           dashboardProviders:
             dashboardproviders.yaml:
               apiVersion: 1
@@ -61,7 +60,7 @@ spec:
                 revision: 37
                 datasource: Prometheus
 
-        # Disable components that are too heavy for Raspberry Pi
+        # Disable components not exposed by k3s
         kubeEtcd:
           enabled: false
         kubeControllerManager:
@@ -87,3 +86,5 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true   # Required for kube-prometheus-stack CRDs
+
+

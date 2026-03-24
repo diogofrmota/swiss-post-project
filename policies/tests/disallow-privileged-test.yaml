@@ -16,3 +16,5 @@ results:
     rule: check-privileged
     resource: pod-privileged
     result: fail
+
+

@@ -1,5 +1,4 @@
 // operator/internal/api/v1alpha1/appconfig_types.go
-// Defines the Go types for the AppConfig custom resource.
 package v1alpha1
 
 import (
@@ -68,3 +67,5 @@ type AppConfigList struct {
 func init() {
 	SchemeBuilder.Register(&AppConfig{}, &AppConfigList{})
 }
+
+

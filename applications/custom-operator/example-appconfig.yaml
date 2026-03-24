@@ -4,10 +4,12 @@ metadata:
   name: hello-app
   namespace: custom-operator
 spec:
-  image: ghcr.io/diogofrmota/hello-app:latest # needs to be configured
+  image: ghcr.io/diogofrmota/hello-app:latest
   replicas: 2
   env:
     - name: LOG_LEVEL
       value: info
     - name: APP_ENV
       value: production
+
+

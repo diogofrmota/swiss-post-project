@@ -7,12 +7,9 @@ import (
 )
 
 var (
-	// GroupVersion is the group and version for this API.
-	GroupVersion = schema.GroupVersion{Group: "swisspost.io", Version: "v1alpha1"}
-
-	// SchemeBuilder adds the types in this group to a scheme.
+	GroupVersion  = schema.GroupVersion{Group: "swisspost.io", Version: "v1alpha1"}
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
-
-	// AddToScheme adds the types in this group to the given scheme.
-	AddToScheme = SchemeBuilder.AddToScheme
+	AddToScheme   = SchemeBuilder.AddToScheme
 )
+
+

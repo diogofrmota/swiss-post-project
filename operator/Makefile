@@ -1,13 +1,10 @@
-# operator/Makefile
-# Common developer tasks for the custom operator.
-
 BINARY        ?= manager
 IMAGE_REGISTRY ?= ghcr.io
-IMAGE_REPO    ?= $(IMAGE_REGISTRY)/<YOUR_USERNAME>/custom-operator
+IMAGE_REPO    ?= $(IMAGE_REGISTRY)/diogofrmota/custom-operator
 TAG           ?= $(shell git rev-parse --short HEAD)
 PLATFORM      ?= linux/arm64
 
-.PHONY: all build test lint docker-build docker-push generate fmt vet clean help
+.PHONY: all build build-arm64 test lint fmt vet generate manifests docker-build docker-push run install-crds clean help
 
 all: build
 
@@ -46,7 +43,7 @@ generate:
 manifests:
 	controller-gen crd paths="./..." output:crd:artifacts:config=../infrastructure/overlays/production
 
-## docker-build: Build the multi-arch Docker image
+## docker-build: Build the Docker image for arm64
 docker-build:
 	docker buildx build \
 	  --platform $(PLATFORM) \
@@ -55,7 +52,7 @@ docker-build:
 	  --file Dockerfile \
 	  .
 
-## docker-push: Push the Docker image to the registry
+## docker-push: Build and push the Docker image to the registry
 docker-push:
 	docker buildx build \
 	  --platform $(PLATFORM) \
@@ -66,11 +63,10 @@ docker-push:
 	  .
 
 ## run: Run the operator locally against the current kubeconfig context
-run: generate fmt vet
+run: fmt vet
 	go run ./cmd/main/main.go \
 	  --metrics-bind-address=:8080 \
-	  --health-probe-bind-address=:8081 \
-	  --leader-elect=false
+	  --health-probe-bind-address=:8081
 
 ## install-crds: Apply the CRD to the current cluster
 install-crds:
@@ -83,3 +79,5 @@ clean:
 ## help: Print this help message
 help:
 	@grep -E '^## ' Makefile | sed 's/## //'
+
+

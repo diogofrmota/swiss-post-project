@@ -1,5 +1,4 @@
 # Automatically adds standard labels to every new Namespace.
-# This keeps tooling (Grafana dashboards, network policies) consistent.
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -23,4 +22,6 @@ spec:
           metadata:
             labels:
               +(managed-by): gitops
-              +(environment: production
+              +(environment): production
+
+

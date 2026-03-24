@@ -1,4 +1,3 @@
-# infrastructure/base/namespace.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -6,3 +5,5 @@ metadata:
   labels:
     managed-by: gitops
     environment: production
+
+

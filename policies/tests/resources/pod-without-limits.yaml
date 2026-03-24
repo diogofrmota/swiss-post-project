@@ -1,4 +1,3 @@
-# policies/tests/resources/pod-without-limits.yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -8,4 +7,6 @@ spec:
   containers:
     - name: app
       image: nginx:alpine
-      # No resources block — should be rejected by the policy
+      # No resources block - should be rejected by require-resource-limits policy
+
+

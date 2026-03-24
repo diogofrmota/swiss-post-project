@@ -1,5 +1,3 @@
-# infrastructure/base/servicemonitor.yaml
-# Tells Prometheus to scrape the operator's /metrics endpoint.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -15,3 +13,5 @@ spec:
     - port: metrics
       path: /metrics
       interval: 30s
+
+

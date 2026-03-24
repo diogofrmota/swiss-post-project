@@ -1,6 +1,4 @@
-# Kyverno CLI test for the require-resource-limits policy.
 # Run with: kyverno test policies/tests/
-
 apiVersion: cli.kyverno.io/v1alpha1
 kind: Test
 metadata:
@@ -19,3 +17,5 @@ results:
     rule: check-container-limits
     resource: pod-without-limits
     result: fail
+
+

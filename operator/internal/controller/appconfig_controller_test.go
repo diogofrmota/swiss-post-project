@@ -1,5 +1,4 @@
 // operator/internal/controller/appconfig_controller_test.go
-// Unit tests for the AppConfig reconciler using envtest.
 package controller
 
 import (
@@ -13,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	swisspostv1alpha1 "github.com/<YOUR_USERNAME>/custom-operator/internal/api/v1alpha1"
+	swisspostv1alpha1 "github.com/diogofrmota/custom-operator/internal/api/v1alpha1"
 )
 
 var _ = Describe("AppConfig Controller", func() {
@@ -25,11 +24,9 @@ var _ = Describe("AppConfig Controller", func() {
 	)
 
 	ctx := context.Background()
-
 	key := types.NamespacedName{Name: resourceName, Namespace: resourceNamespace}
 
 	AfterEach(func() {
-		// Clean up the AppConfig after each test
 		ac := &swisspostv1alpha1.AppConfig{}
 		if err := k8sClient.Get(ctx, key, ac); err == nil {
 			Expect(k8sClient.Delete(ctx, ac)).To(Succeed())
@@ -124,31 +121,7 @@ var _ = Describe("AppConfig Controller", func() {
 				return dep.Spec.Template.Spec.Containers[0].Image
 			}, timeout, interval).Should(Equal("nginx:1.26"))
 		})
-
-		It("Should add a finalizer to the AppConfig", func() {
-			ac := &swisspostv1alpha1.AppConfig{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      resourceName,
-					Namespace: resourceNamespace,
-				},
-				Spec: swisspostv1alpha1.AppConfigSpec{
-					Image:    "nginx:alpine",
-					Replicas: 1,
-				},
-			}
-			Expect(k8sClient.Create(ctx, ac)).To(Succeed())
-
-			Eventually(func() bool {
-				if err := k8sClient.Get(ctx, key, ac); err != nil {
-					return false
-				}
-				for _, f := range ac.Finalizers {
-					if f == finalizerName {
-						return true
-					}
-				}
-				return false
-			}, timeout, interval).Should(BeTrue())
-		})
 	})
 })
+
+

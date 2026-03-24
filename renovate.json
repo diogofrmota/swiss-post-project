@@ -8,7 +8,7 @@
 
   "packageRules": [
     {
-      "description": "Group all Kubernetes infrastructure Helm chart updates into one weekly PR",
+      "description": "Group all Kubernetes infrastructure Helm chart updates into one PR",
       "matchDatasources": ["helm"],
       "matchPackageNames": [
         "argo-cd",
@@ -23,7 +23,7 @@
       "automerge": false
     },
     {
-      "description": "Auto-merge patch-level updates for non-critical tools",
+      "description": "Auto-merge patch-level Helm updates",
       "matchUpdateTypes": ["patch"],
       "matchDatasources": ["helm"],
       "automerge": true,
@@ -62,3 +62,5 @@
     }
   ]
 }
+
+

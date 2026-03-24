@@ -14,7 +14,7 @@ spec:
     helm:
       valuesObject:
         installCRDs: true
-        resources: # testing
+        resources:
           requests:
             cpu: 10m
             memory: 32Mi
@@ -29,3 +29,5 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+
+

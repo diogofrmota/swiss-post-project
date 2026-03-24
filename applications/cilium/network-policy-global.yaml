@@ -3,6 +3,7 @@ kind: CiliumClusterwideNetworkPolicy
 metadata:
   name: deny-cross-namespace
 spec:
+  # Apply to all pods except system namespaces that need cross-namespace access
   endpointSelector:
     matchExpressions:
       - key: k8s:io.kubernetes.pod.namespace
@@ -16,12 +17,16 @@ spec:
           - cert-manager
   ingress:
     - fromEndpoints:
-        - matchLabels:
-            # Allow same-namespace traffic
-            k8s:io.kubernetes.pod.namespace: ""   # resolved at runtime to own namespace
+        - matchExpressions:
+            # Allow traffic only from pods in the same namespace
+            - key: k8s:io.kubernetes.pod.namespace
+              operator: In
+              values: []   # Cilium resolves this to the endpoint's own namespace at runtime
   egress:
+    # Allow egress to the Kubernetes API server
     - toEntities:
         - kube-apiserver
+    # Allow DNS via CoreDNS
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
@@ -30,3 +35,7 @@ spec:
         - ports:
             - port: "53"
               protocol: UDP
+            - port: "53"
+              protocol: TCP
+
+

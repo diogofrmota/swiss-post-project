@@ -1,18 +1,18 @@
-# infrastructure/overlays/production/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-bases:
+# 'bases' is deprecated since Kustomize v4 - replaced with 'resources'
+resources:
   - ../../base
+  - crd.yaml
 
 # Image tag is updated by the CI pipeline on every push to main
 images:
-  - name: ghcr.io/<YOUR_USERNAME>/custom-operator
+  - name: ghcr.io/diogofrmota/custom-operator
     newTag: latest   # replaced with git SHA by GitHub Actions
 
 patches:
   - path: replica-patch.yaml
   - path: resource-patch.yaml
 
-resources:
-  - crd.yaml
+

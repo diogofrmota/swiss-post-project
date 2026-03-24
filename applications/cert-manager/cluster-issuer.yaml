@@ -12,3 +12,5 @@ spec:
       - http01:
           ingress:
             ingressClassName: cilium
+
+

@@ -5,7 +5,7 @@ metadata:
   name: default-deny
   namespace: custom-operator
 spec:
-  endpointSelector: {}   # matches all pods in namespace
+  endpointSelector: {}
   ingress: []
   egress: []
 ---
@@ -70,3 +70,5 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
+
+
