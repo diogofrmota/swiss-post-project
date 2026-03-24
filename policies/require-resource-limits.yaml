@@ -4,6 +4,7 @@ kind: ClusterPolicy
 metadata:
   name: require-resource-limits
   annotations:
+    argocd.argoproj.io/sync-wave: "5"
     policies.kyverno.io/title: Require Resource Limits
     policies.kyverno.io/category: Best Practices
     policies.kyverno.io/description: >-

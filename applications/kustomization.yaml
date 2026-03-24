@@ -12,3 +12,7 @@ resources:
   - metallb/application.yaml
   - metallb/ip-pool.yaml
   - monitoring/application.yaml
+  - ../policies/add-namespace-labels.yaml
+  - ../policies/disallow-privileged-containers.yaml
+  - ../policies/require-non-root.yaml
+  - ../policies/require-resource-limits.yaml

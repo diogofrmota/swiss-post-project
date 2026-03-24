@@ -1,3 +1,7 @@
+do i need folder tests in ploicies?
+
+i didnt change my cilium configuration please cant i just use target version in here and it will work with renvoate?
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -34,6 +38,14 @@ spec:
           default: true
           loadbalancerMode: shared # means all ingresses share a single LoadBalancer IP
 
+        # ARM64 images for Raspberry Pi
+        image:
+          repository: quay.io/cilium/cilium
+          tag: v1.15.3
+        operator:
+          image:
+            repository: quay.io/cilium/operator-generic
+            tag: v1.15.3
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system

@@ -4,6 +4,7 @@ kind: ClusterPolicy
 metadata:
   name: add-namespace-labels
   annotations:
+    argocd.argoproj.io/sync-wave: "5"
     policies.kyverno.io/title: Add Standard Namespace Labels
     policies.kyverno.io/category: Automation
     policies.kyverno.io/description: >-

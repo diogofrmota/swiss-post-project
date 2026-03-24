@@ -50,15 +50,5 @@
 
   "kubernetes": {
     "fileMatch": ["\\.yaml$"]
-  },
-
-  "regexManagers": [
-    {
-      "description": "Detect Argo CD version in setup script",
-      "fileMatch": ["scripts/argocd-setup\\.sh"],
-      "matchStrings": ["ARGOCD_VERSION='(?<currentValue>[^']+)'"],
-      "depNameTemplate": "argoproj/argo-cd",
-      "datasourceTemplate": "github-releases"
-    }
-  ]
+  }
 }

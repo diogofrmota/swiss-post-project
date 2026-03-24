@@ -5,6 +5,8 @@ apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:
   name: deny-cross-namespace
+  annotations:
+    argocd.argoproj.io/sync-wave: "3" 
 spec:
   # Apply to all pods except system namespaces that need cross-namespace access
   endpointSelector:

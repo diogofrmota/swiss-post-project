@@ -6,7 +6,14 @@ metadata:
   namespace: golang-scraper
 spec:
   endpointSelector: {}
-  ingress: []
+  ingress:
+    # Allow kubelet probes (liveness and readiness)
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
   egress: []
 ---
 # Allow Prometheus to scrape metrics from the scraper pod
