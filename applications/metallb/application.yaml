@@ -21,7 +21,7 @@ spec:
               memory: 64Mi
         speaker:
           tolerations:
-            - key: node-role.kubernetes.io/master
+            - key: node-role.kubernetes.io/control-plane
               effect: NoSchedule
           resources:
             requests:

@@ -10,6 +10,17 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | Raspberry Pi 4B (2GB) | k3s-worker-01 | 192.168.1.31 | Worker |
 | Raspberry Pi 4B (2GB) | k3s-worker-02 | 192.168.1.32 | Worker |
 
+## Dashboards & UIs
+
+| Service | URL |
+|---------|-----|
+| Argo CD | https://argocd.diogomota.com |
+| Grafana | https://grafana.diogomota.com |
+| Prometheus | https://prometheus.diogomota.com |
+| Hubble UI (Cilium) | https://hubble.diogomota.com |
+
+All services are exposed via Cilium ingress with TLS certificates issued automatically by cert-manager (Let's Encrypt).
+
 ## Tech Stack
 
 | Tool | Purpose |
@@ -27,6 +38,10 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | GitHub Actions | CI - build & push images |
 | Renovate Bot | Automated dependency updates |
 | Golang | Custom scraper |
+
+## Installation
+
+See [INSTALLATION.md](INSTALLATION.md) for detailed setup instructions covering OS preparation, k3s cluster bootstrap, Argo CD deployment, and post-install verification.
 
 ## What is Inside each Folder
 

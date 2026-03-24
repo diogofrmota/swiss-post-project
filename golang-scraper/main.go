@@ -10,8 +10,8 @@ import (
 )
 
 // HN top stories API — no auth, always available
-const hnTopStoriesURL = "https://hacker-news.firebaseio.com/v2/topstories.json"
-const hnItemURL = "https://hacker-news.firebaseio.com/v2/item/%d.json"
+const hnTopStoriesURL = "https://hacker-news.firebaseio.com/v0/topstories.json"
+const hnItemURL = "https://hacker-news.firebaseio.com/v0/item/%d.json"
 
 type Story struct {
 	Score       int    `json:"score"`
