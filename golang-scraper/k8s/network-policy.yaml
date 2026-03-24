@@ -3,7 +3,7 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: default-deny
-  namespace: hn-scraper
+  namespace: golang-scraper
 spec:
   endpointSelector: {}
   ingress: []
@@ -14,11 +14,11 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: allow-prometheus-scrape
-  namespace: hn-scraper
+  namespace: golang-scraper
 spec:
   endpointSelector:
     matchLabels:
-      app: hn-scraper
+      app: golang-scraper
   ingress:
     - fromEndpoints:
         - matchLabels:

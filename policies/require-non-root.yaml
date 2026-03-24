@@ -26,6 +26,7 @@ spec:
                 - kube-system
                 - kyverno
                 - argocd
+                - monitoring
       validate:
         message: "Containers must not run as root. Set securityContext.runAsNonRoot: true."
         pattern:
