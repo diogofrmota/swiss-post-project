@@ -27,13 +27,35 @@ spec:
                   resources:
                     requests:
                       storage: 10Gi
+          ingress:
+            enabled: true
+            ingressClassName: cilium
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+            hosts:
+              - prometheus.diogomota.com
+            tls:
+              - secretName: prometheus-tls
+                hosts:
+                  - prometheus.diogomota.com
 
         grafana:
           admin:
             existingSecret: grafana-admin-secret
             passwordKey: admin-password
           service:
-            type: LoadBalancer
+            type: ClusterIP
+          ingress:
+            enabled: true
+            ingressClassName: cilium
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+            hosts:
+              - grafana.diogomota.com
+            tls:
+              - secretName: grafana-tls
+                hosts:
+                  - grafana.diogomota.com
           resources:
             requests:
               cpu: 50m
@@ -60,7 +82,7 @@ spec:
                 revision: 37
                 datasource: Prometheus
 
-        # Disable components not exposed by k3s
+        # Disabled — not exposed by k3s
         kubeEtcd:
           enabled: false
         kubeControllerManager:
@@ -76,6 +98,7 @@ spec:
                 memory: 32Mi
               limits:
                 memory: 64Mi
+
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
@@ -85,4 +108,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true   # Required for kube-prometheus-stack CRDs
+      - ServerSideApply=true

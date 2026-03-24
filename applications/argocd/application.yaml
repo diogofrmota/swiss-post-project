@@ -11,14 +11,75 @@ spec:
     targetRevision: 9.4.15
     helm:
       valuesObject:
+        global:
+          domain: argocd.diogomota.com
+
         server:
           service:
-            type: LoadBalancer
-          extraArgs:
-            - --insecure
+            type: ClusterIP          # ingress handles external access now
+          ingress:
+            enabled: true
+            ingressClassName: cilium
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+            tls: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+        controller:
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+        repoServer:
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+        redis:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+
+        notifications:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+
+        applicationSet:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 50m
+              memory: 128Mi
+
         configs:
           params:
-            server.insecure: true
+            server.insecure: true     # TLS terminated at the ingress
+
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
