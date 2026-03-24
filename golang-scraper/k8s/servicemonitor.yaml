@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: hn-scraper
+  namespace: hn-scraper
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: hn-scraper
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 60s

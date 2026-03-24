@@ -1,24 +1,24 @@
-# 1. Default deny all traffic in the namespace
+# Default deny all
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: default-deny
-  namespace: custom-operator
+  namespace: hn-scraper
 spec:
   endpointSelector: {}
   ingress: []
   egress: []
 ---
-# 2. Allow Prometheus to scrape the metrics endpoint (port 8080)
+# Allow Prometheus to scrape
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: allow-prometheus-scrape
-  namespace: custom-operator
+  namespace: hn-scraper
 spec:
   endpointSelector:
     matchLabels:
-      app: custom-operator
+      app: hn-scraper
   ingress:
     - fromEndpoints:
         - matchLabels:
@@ -28,34 +28,34 @@ spec:
             - port: "8080"
               protocol: TCP
 ---
-# 3. Allow the operator to reach the Kubernetes API server
+# Allow egress to the HN API (HTTPS)
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: allow-kube-apiserver
-  namespace: custom-operator
+  name: allow-hn-api
+  namespace: hn-scraper
 spec:
   endpointSelector:
     matchLabels:
-      app: custom-operator
+      app: hn-scraper
   egress:
-    - toEntities:
-        - kube-apiserver
+    - toFQDNs:
+        - matchName: "hacker-news.firebaseio.com"
       toPorts:
         - ports:
-            - port: "6443"
+            - port: "443"
               protocol: TCP
 ---
-# 4. Allow DNS resolution (CoreDNS)
+# Allow DNS
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: allow-dns
-  namespace: custom-operator
+  namespace: hn-scraper
 spec:
   endpointSelector:
     matchLabels:
-      app: custom-operator
+      app: hn-scraper
   egress:
     - toEndpoints:
         - matchLabels:
