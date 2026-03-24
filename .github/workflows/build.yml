@@ -4,10 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - scraper/main.go
-      - scraper/go.mod
-      - scraper/Dockerfile
-
+      - golang-scraper/main.go
+      - golang-scraper/go.mod
+      - golang-scraper/Dockerfile
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,7 +32,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: scraper
+          context: golang-scraper
           platforms: linux/arm64
           push: true
           tags: |

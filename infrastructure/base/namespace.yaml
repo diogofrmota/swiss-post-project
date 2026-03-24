@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: custom-operator
-  labels:
-    managed-by: gitops
-    environment: production

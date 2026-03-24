@@ -26,7 +26,7 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | Grafana | Dashboards & observability |
 | GitHub Actions | CI - build & push images |
 | Renovate Bot | Automated dependency updates |
-| Golang | Custom operator |
+| Golang | Custom scraper |
 
 ## What is Inside each Folder
 
@@ -49,8 +49,8 @@ Deploys cert-manager for automatic TLS certificate issuance.
 #### `applications/cilium/`
 Deploys Cilium as the CNI, replacing k3s default Flannel. Cilium handles all packet routing via eBPF and handles outgoing pod traffic at the eBPF layer instead of iptables. The ingress controller runs in shared load-balancer mode (one MetalLB IP for all ingresses).
 
-#### `applications/custom-operator/`
-Deploys the custom Golang operator.
+#### `applications/golang-scraper/`
+Deploys the custom Golang scraper.
 
 #### `applications/kyverno/`
 Deploys Kyverno as the admission controller. Policies live in `policies/` and are applied as `ClusterPolicy` resources.
@@ -68,28 +68,6 @@ Deploys `kube-prometheus-stack` with Prometheus and Grafana. `operator-alerts.ya
 Applied manually once during setup. After this Argo CD manages everything.
 
 - **`root-app.yaml`** - the root Argo CD `Application` pointing at `applications/`.
-
----
-
-### `infrastructure/`
-
-Kustomize manifests for the custom operator.
-
-- **`base/`** - Namespace, Deployment, ServiceAccount, ClusterRole, ClusterRoleBinding, Service, ServiceMonitor. Deployment uses distroless/nonroot and drops all Linux capabilities.
-- **`overlays/production/`** - `crd.yaml` with OpenAPI validation schema, `replica-patch.yaml` pinning replicas to 1, `resource-patch.yaml` with tighter CPU/memory limits, and `kustomization.yaml` wiring it all together.
-
----
-
-### `operator/`
-
-Go source for the custom Kubernetes operator using controller-runtime.
-
-- **`cmd/main/main.go`** - sets up the manager, registers the AppConfig scheme, wires the reconciler, starts health/metrics servers.
-- **`internal/api/v1alpha1/`** - AppConfig type definitions, group/version registration, generated DeepCopy methods.
-- **`internal/controller/appconfig_controller.go`** - reconciliation loop: fetch AppConfig, build desired Deployment, create or update it, sync status back. Owner references handle garbage collection on deletion.
-- **`internal/controller/appconfig_controller_test.go`** - envtest integration tests covering Deployment creation, owner references, and spec drift.
-- **`Dockerfile`** - multi-stage: compiles static ARM64 binary in golang:1.22-alpine, copies into distroless/static:nonroot.
-- **`Makefile`** - `make build`, `make test`, `make lint`, `make docker-push`, `make install-crds`, `make run`.
 
 ---
 

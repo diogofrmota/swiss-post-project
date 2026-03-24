@@ -1,14 +1,14 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: hn-scraper
-  namespace: hn-scraper
+  name: golang-scraper
+  namespace: golang-scraper
   labels:
     release: monitoring
 spec:
   selector:
     matchLabels:
-      app: hn-scraper
+      app: golang-scraper
   endpoints:
     - port: metrics
       path: /metrics

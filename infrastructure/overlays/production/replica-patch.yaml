@@ -1,7 +1,0 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: custom-operator
-  namespace: custom-operator
-spec:
-  replicas: 1

@@ -32,12 +32,12 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: allow-hn-api
-  namespace: hn-scraper
+  name: allow-golang-scraper-api
+  namespace: golang-scraper
 spec:
   endpointSelector:
     matchLabels:
-      app: hn-scraper
+      app: golang-scraper
   egress:
     - toFQDNs:
         - matchName: "hacker-news.firebaseio.com"
@@ -51,11 +51,11 @@ apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
   name: allow-dns
-  namespace: hn-scraper
+  namespace: golang-scraper
 spec:
   endpointSelector:
     matchLabels:
-      app: hn-scraper
+      app: golang-scraper
   egress:
     - toEndpoints:
         - matchLabels:
