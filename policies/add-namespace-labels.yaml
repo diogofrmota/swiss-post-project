@@ -1,0 +1,26 @@
+# Automatically adds standard labels to every new Namespace.
+# This keeps tooling (Grafana dashboards, network policies) consistent.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: add-namespace-labels
+  annotations:
+    policies.kyverno.io/title: Add Standard Namespace Labels
+    policies.kyverno.io/category: Automation
+    policies.kyverno.io/description: >-
+      Mutates every new Namespace to add managed-by and environment labels,
+      ensuring consistent labelling for policy targeting and observability.
+spec:
+  rules:
+    - name: add-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              +(managed-by): gitops
+              +(environment: production

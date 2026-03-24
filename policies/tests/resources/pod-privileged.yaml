@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-non-privileged
+  namespace: default
+spec:
+  containers:
+    - name: app
+      image: nginx:alpine
+      securityContext:
+        privileged: false
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-privileged
+  namespace: default
+spec:
+  containers:
+    - name: app
+      image: nginx:alpine
+      securityContext:
+        privileged: true
