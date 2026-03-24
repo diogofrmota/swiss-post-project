@@ -1,0 +1,50 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: custom-operator-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring   # picked up by kube-prometheus-stack
+spec:
+  groups:
+    - name: custom-operator
+      interval: 30s
+      rules:
+        # Alert if the operator has been producing reconcile errors for 5+ minutes
+        - alert: OperatorReconcileErrors
+          expr: |
+            rate(controller_runtime_reconcile_errors_total{controller="appconfig"}[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Custom operator is producing reconcile errors"
+            description: >-
+              The AppConfig controller has been logging reconcile errors for more than
+              5 minutes. Check operator logs: kubectl logs -n custom-operator -l app=custom-operator
+
+        # Alert if the operator pod is not running
+        - alert: OperatorDown
+          expr: |
+            absent(up{job="custom-operator-metrics"}) == 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Custom operator is unreachable"
+            description: >-
+              Prometheus cannot scrape the custom operator metrics endpoint.
+              The operator may be crashlooping or evicted.
+
+        # Alert if work queue depth is growing (operator cannot keep up)
+        - alert: OperatorQueueBacklog
+          expr: |
+            workqueue_depth{name="appconfig"} > 10
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Custom operator work queue is backed up"
+            description: >-
+              The AppConfig work queue depth has exceeded 10 items for more than 5 minutes,
+              suggesting the operator is falling behind on reconciliations.

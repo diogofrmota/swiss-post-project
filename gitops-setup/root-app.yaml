@@ -10,7 +10,7 @@ spec:
   source: # source code, where manifests come from. It has the desired state
     repoURL: https://github.com/diogofrmota/swiss-post-project
     targetRevision: HEAD
-    path: apps
+    path: applications
   destination: # defining where to apply manifests
     server: https://kubernetes.default.svc
     namespace: argocd

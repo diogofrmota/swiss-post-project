@@ -1,0 +1,92 @@
+# Grafana dashboard for the custom operator, loaded via ConfigMap.
+# Grafana's sidecar picks this up automatically (label: grafana_dashboard: "1").
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: operator-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  operator-dashboard.json: |
+    {
+      "title": "Custom Operator",
+      "uid": "custom-operator",
+      "schemaVersion": 38,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Reconciliation Rate",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "rate(controller_runtime_reconcile_total{controller=\"appconfig\"}[5m])",
+              "legendFormat": "{{ result }}"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Reconciliation Errors",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "rate(controller_runtime_reconcile_errors_total{controller=\"appconfig\"}[5m])",
+              "legendFormat": "errors/s"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Reconciliation Duration (p99)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.99, rate(controller_runtime_reconcile_time_seconds_bucket{controller=\"appconfig\"}[5m]))",
+              "legendFormat": "p99 latency"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "Work Queue Depth",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "workqueue_depth{name=\"appconfig\"}",
+              "legendFormat": "queue depth"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Active AppConfig Resources",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 16, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "count(kube_customresource_info{customresource_group=\"swisspost.io\", customresource_kind=\"AppConfig\"})",
+              "legendFormat": "AppConfigs"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Operator Memory Usage",
+          "type": "timeseries",
+          "gridPos": { "x": 6, "y": 16, "w": 12, "h": 4 },
+          "targets": [
+            {
+              "expr": "container_memory_working_set_bytes{namespace=\"custom-operator\", container=\"operator\"}",
+              "legendFormat": "memory"
+            }
+          ]
+        }
+      ]
+    }

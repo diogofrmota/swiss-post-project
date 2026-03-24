@@ -1,0 +1,54 @@
+# apps/cilium/application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cilium
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://helm.cilium.io
+    chart: cilium
+    targetRevision: 1.15.3
+    helm:
+      valuesObject:
+        # Replace kube-proxy entirely with eBPF
+        kubeProxyReplacement: true
+        k8sServiceHost: 192.168.1.29
+        k8sServicePort: 6443
+
+        # eBPF datapath
+        bpf:
+          masquerade: true
+
+        # Enable Hubble observability
+        hubble:
+          enabled: true
+          relay:
+            enabled: true
+          ui:
+            enabled: true
+
+        # Ingress controller (replaces Nginx)
+        ingressController:
+          enabled: true
+          default: true
+          loadbalancerMode: shared
+
+        # Arm64 images for Raspberry Pi
+        image:
+          repository: quay.io/cilium/cilium
+          tag: v1.15.3
+        operator:
+          image:
+            repository: quay.io/cilium/operator-generic
+            tag: v1.15.3
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

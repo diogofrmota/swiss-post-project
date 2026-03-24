@@ -1,0 +1,72 @@
+# 1. Default deny all traffic in the namespace
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: default-deny
+  namespace: custom-operator
+spec:
+  endpointSelector: {}   # matches all pods in namespace
+  ingress: []
+  egress: []
+---
+# 2. Allow Prometheus to scrape the metrics endpoint (port 8080)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: custom-operator
+spec:
+  endpointSelector:
+    matchLabels:
+      app: custom-operator
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+---
+# 3. Allow the operator to reach the Kubernetes API server
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-kube-apiserver
+  namespace: custom-operator
+spec:
+  endpointSelector:
+    matchLabels:
+      app: custom-operator
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+---
+# 4. Allow DNS resolution (CoreDNS)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: custom-operator
+spec:
+  endpointSelector:
+    matchLabels:
+      app: custom-operator
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
