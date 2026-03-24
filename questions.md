@@ -15,3 +15,5 @@ spec:
       - http01:
           ingress:
             ingressClassName: cilium
+
+3. Add renovate bot too
