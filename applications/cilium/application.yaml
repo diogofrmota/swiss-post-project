@@ -3,8 +3,6 @@ kind: Application
 metadata:
   name: cilium
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
@@ -18,23 +16,23 @@ spec:
         k8sServiceHost: 192.168.1.29
         k8sServicePort: 6443
 
-        # eBPF datapath
+        # eBPF datapath (Uses eBPF instead of iptables for NAT/masquerading outbound traffic)
         bpf:
           masquerade: true
 
         # Enable Hubble observability
-        hubble:
+        hubble: # Cilium's built-in observability layer
           enabled: true
-          relay:
+          relay: # aggregates flow data from nodes
             enabled: true
-          ui:
+          ui: # provides a web dashboard to visualize network traffic.
             enabled: true
 
         # Ingress controller (replaces Nginx)
         ingressController:
           enabled: true
           default: true
-          loadbalancerMode: shared
+          loadbalancerMode: shared # means all ingresses share a single LoadBalancer IP
 
         # ARM64 images for Raspberry Pi
         image:
@@ -51,5 +49,3 @@ spec:
     automated:
       prune: true
       selfHeal: true
-
-

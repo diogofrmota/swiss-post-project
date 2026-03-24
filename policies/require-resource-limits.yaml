@@ -35,5 +35,3 @@ spec:
                   limits:
                     cpu: "?*"
                     memory: "?*"
-
-

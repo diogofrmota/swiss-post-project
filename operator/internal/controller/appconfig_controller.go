@@ -127,5 +127,3 @@ func (r *AppConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func boolPtr(b bool) *bool { return &b }
-
-

@@ -17,5 +17,3 @@ results:
     rule: check-container-limits
     resource: pod-without-limits
     result: fail
-
-

@@ -2,7 +2,7 @@ name: Renovate
 
 on:
   schedule:
-    - cron: "0 3 * * *"
+    - cron: "0 5 * * *"
   workflow_dispatch:
 
 jobs:
@@ -17,5 +17,3 @@ jobs:
         with:
           configurationFile: renovate.json
           token: ${{ secrets.RENOVATE_TOKEN }}
-
-

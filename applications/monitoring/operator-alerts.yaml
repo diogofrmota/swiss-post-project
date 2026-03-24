@@ -45,5 +45,3 @@ spec:
             description: >-
               The AppConfig work queue depth has exceeded 10 items for more than 5 minutes,
               suggesting the operator is falling behind on reconciliations.
-
-

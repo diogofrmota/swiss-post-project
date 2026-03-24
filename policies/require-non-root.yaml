@@ -33,5 +33,3 @@ spec:
             containers:
               - securityContext:
                   runAsNonRoot: true
-
-

@@ -123,5 +123,3 @@ var _ = Describe("AppConfig Controller", func() {
 		})
 	})
 })
-
-

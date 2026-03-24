@@ -3,8 +3,6 @@ kind: Application
 metadata:
   name: metallb
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
@@ -13,7 +11,7 @@ spec:
     targetRevision: 0.14.4
     helm:
       valuesObject:
-        # Speaker must run on all nodes to announce ARP
+        # to run on all nodes
         speaker:
           tolerations:
             - key: node-role.kubernetes.io/master
@@ -27,5 +25,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-
-

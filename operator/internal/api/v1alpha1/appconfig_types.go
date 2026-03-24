@@ -67,5 +67,3 @@ type AppConfigList struct {
 func init() {
 	SchemeBuilder.Register(&AppConfig{}, &AppConfigList{})
 }
-
-

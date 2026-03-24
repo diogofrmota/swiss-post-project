@@ -1,3 +1,6 @@
+# This policy enforces namespace isolation cluster-wide by blocking all cross-namespace traffic for application pods,
+# while allowing same-namespace communication, DNS resolution, and Kubernetes API access — system namespaces are
+# excluded since they need broader access by design.
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:
@@ -37,5 +40,3 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
-
-

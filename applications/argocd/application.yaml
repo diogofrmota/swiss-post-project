@@ -3,8 +3,6 @@ kind: Application
 metadata:
   name: argocd
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
@@ -17,7 +15,7 @@ spec:
           service:
             type: LoadBalancer
           extraArgs:
-            - --insecure   # TLS terminated at Cilium ingress
+            - --insecure
         configs:
           params:
             server.insecure: true
@@ -30,5 +28,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-
-

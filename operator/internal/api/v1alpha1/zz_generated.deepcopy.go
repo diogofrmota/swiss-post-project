@@ -110,5 +110,3 @@ func (in *EnvVar) DeepCopy() *EnvVar {
 	in.DeepCopyInto(out)
 	return out
 }
-
-

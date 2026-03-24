@@ -26,5 +26,3 @@ kubectl get secret argocd-initial-admin-secret -n argocd \
 echo ""
 echo "Port-forward:  kubectl port-forward svc/argocd-server -n argocd 8080:443"
 echo "URL:           https://localhost:8080"
-
-

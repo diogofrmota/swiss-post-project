@@ -33,7 +33,7 @@
       "description": "Group GitHub Actions updates",
       "matchManagers": ["github-actions"],
       "groupName": "github-actions",
-      "schedule": ["before 4am"],
+      "schedule": ["before 7am"],
       "automerge": true
     },
     {

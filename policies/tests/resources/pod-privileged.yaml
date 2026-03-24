@@ -9,5 +9,3 @@ spec:
       image: nginx:alpine
       securityContext:
         privileged: true
-
-

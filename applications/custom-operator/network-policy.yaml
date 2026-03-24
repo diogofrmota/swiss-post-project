@@ -70,5 +70,3 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-
-

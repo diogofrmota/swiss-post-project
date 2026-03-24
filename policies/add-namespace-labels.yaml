@@ -23,5 +23,3 @@ spec:
             labels:
               +(managed-by): gitops
               +(environment): production
-
-

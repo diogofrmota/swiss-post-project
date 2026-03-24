@@ -3,8 +3,6 @@ kind: Application
 metadata:
   name: custom-operator
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
@@ -20,5 +18,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-
-
