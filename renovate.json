@@ -19,7 +19,7 @@
         "metallb"
       ],
       "groupName": "k8s-infrastructure-helm-charts",
-      "schedule": ["on monday and thursday"],
+      "schedule": ["before 7am"],
       "automerge": false
     },
     {
@@ -33,7 +33,7 @@
       "description": "Group GitHub Actions updates",
       "matchManagers": ["github-actions"],
       "groupName": "github-actions",
-      "schedule": ["on monday"],
+      "schedule": ["before 4am"],
       "automerge": true
     },
     {
@@ -54,7 +54,7 @@
 
   "regexManagers": [
     {
-      "description": "Detect Argo CD version in bootstrap script",
+      "description": "Detect Argo CD version in setup script",
       "fileMatch": ["scripts/argocd-setup\\.sh"],
       "matchStrings": ["ARGOCD_VERSION='(?<currentValue>[^']+)'"],
       "depNameTemplate": "argoproj/argo-cd",
@@ -62,5 +62,3 @@
     }
   ]
 }
-
-

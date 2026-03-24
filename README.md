@@ -1,4 +1,4 @@
-# Kubernetes GitOps Cluster
+# Kubernetes Cluster using GitOps
 
 A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, managed fully via GitOps with Argo CD.
 
@@ -10,7 +10,7 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | Raspberry Pi 4B (2GB) | k3s-worker-01 | 192.168.1.31 | Worker |
 | Raspberry Pi 4B (2GB) | k3s-worker-02 | 192.168.1.32 | Worker |
 
-## Stack
+## Tech Stack
 
 | Tool | Purpose |
 |------|---------|
@@ -28,75 +28,11 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | Renovate Bot | Automated dependency updates |
 | Golang | Custom operator |
 
-## Repository Layout
-
-```
-.
-├── .github/
-│   └── workflows/
-│       ├── ci.yaml                   # Build and push operator image on push to main
-│       └── renovate.yml              # Scheduled Renovate dependency update bot
-├── applications/                     # Argo CD Application manifests (App of Apps pattern)
-│   ├── argocd/                       # Argo CD self-manages its own Application
-│   ├── cert-manager/                 # TLS certificate management + ClusterIssuer
-│   ├── cilium/                       # CNI, network policies, ingress controller
-│   ├── custom-operator/              # Golang operator + ingress + network policies
-│   ├── kyverno/                      # Policy engine
-│   ├── metallb/                      # Bare-metal load balancer + IP pool
-│   └── monitoring/                   # Prometheus, Grafana, alerts, dashboards
-├── gitops-setup/                     # Bootstrap manifests applied once manually
-│   ├── argocd-project.yaml           # AppProject scoping source repos and destinations
-│   └── root-app.yaml                 # Root App of Apps - bootstraps everything else
-├── infrastructure/
-│   ├── base/                         # Base Kustomize manifests for the custom operator
-│   └── overlays/production/          # Production overrides (replicas, resource limits, CRD)
-├── operator/                         # Source code for the custom Golang operator
-│   ├── cmd/main/main.go              # Entrypoint
-│   ├── internal/
-│   │   ├── api/v1alpha1/             # AppConfig CRD Go types and DeepCopy methods
-│   │   └── controller/               # AppConfigReconciler and envtest suite
-│   ├── Dockerfile                    # Multi-stage ARM64 build
-│   ├── Makefile                      # Developer tasks: build, test, lint, docker-push
-│   ├── go.mod
-│   └── .golangci.yaml
-├── policies/                         # Kyverno ClusterPolicy resources
-│   └── tests/                        # Kyverno CLI tests and test pod fixtures
-├── renovate.json                     # Renovate Bot configuration
-└── scripts/
-    └── argocd-setup.sh               # One-time bootstrap script
-```
-
-## Setting up the homelab
-
-```bash
-# 1. Install k3s on the master node
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable=traefik --disable=flannel --flannel-backend=none --disable-network-policy" sh -
-
-# 2. Join workers - get the token from the master first
-cat /var/lib/rancher/k3s/server/node-token
-# Then on each worker:
-curl -sfL https://get.k3s.io | K3S_URL=https://192.168.1.29:6443 K3S_TOKEN=<token> sh -
-
-# 3. Install Argo CD and apply the root App of Apps
-bash scripts/argocd-setup.sh
-```
-
-After step 3, Argo CD takes over and reconciles every application defined in `applications/`.
-
-## GitOps Workflow
-
-```
-git push -> GitHub Actions builds image -> updates image tag in repo -> Argo CD detects diff -> rolls out new version
-```
-
----
-
-## Folder & Application Reference
+## What is Inside each Folder
 
 ### `.github/workflows/`
 
-- **`renovate.yml`** - runs Renovate Bot on a daily cron. Renovate scans the repository for outdated Helm chart versions, container image tags, Go module dependencies, and GitHub Actions versions, then opens pull requests to update them. Configured by `renovate.json` at the repo root.
-- **`ci.yaml`** *(to be added)* - builds the operator Docker image on every push to `main`, pushes it to GHCR, and patches the image tag in `infrastructure/overlays/production/kustomization.yaml` so Argo CD detects the change and rolls it out.
+- **`renovate.yml`** - runs Renovate Bot on a daily cron. Renovate scans the repository for outdated Helm chart versions, container image tags, Go module dependencies, and GitHub Actions versions, then opens pull requests to update them. Configured at `renovate.json`.
 
 ---
 
@@ -105,34 +41,33 @@ git push -> GitHub Actions builds image -> updates image tag in repo -> Argo CD 
 Each subdirectory contains an Argo CD `Application` manifest. The root app points at this directory, so adding a folder here automatically registers a new application with Argo CD.
 
 #### `applications/argocd/`
-Argo CD manages itself via GitOps. Deploys the `argo-cd` Helm chart (v9.4.15). `server.service.type: LoadBalancer` gives Argo CD a stable IP from MetalLB. TLS is terminated at the Cilium ingress layer so the server runs plain HTTP internally (`--insecure`).
+Argo CD manages itself via GitOps. Deploys the `argo-cd` using Helm chart.
 
 #### `applications/cert-manager/`
-Deploys cert-manager (v1.20.0) for automatic TLS certificate issuance. `installCRDs: true` keeps CRDs version-controlled with the chart. Resource limits are deliberately low (32Mi request, 64Mi limit) for the Raspberry Pi memory budget. `cluster-issuer.yaml` defines a `ClusterIssuer` pointing at the Let's Encrypt production ACME endpoint using the HTTP-01 challenge via the Cilium ingress class.
+Deploys cert-manager for automatic TLS certificate issuance.
 
 #### `applications/cilium/`
-Deploys Cilium (v1.15.3) as the CNI, replacing k3s default Flannel. `kubeProxyReplacement: true` means Cilium handles all packet routing via eBPF. `bpf.masquerade: true` handles outgoing pod traffic at the eBPF layer instead of iptables. Hubble is enabled for real-time network observability. The ingress controller runs in shared load-balancer mode (one MetalLB IP for all ingresses). ARM64 images are pinned explicitly for Raspberry Pi. `network-policy-global.yaml` denies all cross-namespace traffic by default with egress allowances only for the API server and CoreDNS.
+Deploys Cilium as the CNI, replacing k3s default Flannel. Cilium handles all packet routing via eBPF and handles outgoing pod traffic at the eBPF layer instead of iptables. The ingress controller runs in shared load-balancer mode (one MetalLB IP for all ingresses).
 
 #### `applications/custom-operator/`
-Deploys the custom Golang operator. `application.yaml` points Argo CD at `infrastructure/overlays/production` for a Kustomize build. `example-appconfig.yaml` is a sample `AppConfig` CR. `ingress.yaml` exposes `hello.diogomota.com` with cert-manager TLS. `network-policy.yaml` has four Cilium policies: default-deny, allow Prometheus scraping on port 8080, allow egress to the API server, and allow DNS.
+Deploys the custom Golang operator.
 
 #### `applications/kyverno/`
-Deploys Kyverno (v3.1.4) as the admission controller. Single replica to save memory (256Mi limit). Policies live in `policies/` and are applied as `ClusterPolicy` resources.
+Deploys Kyverno as the admission controller. Policies live in `policies/` and are applied as `ClusterPolicy` resources.
 
 #### `applications/metallb/`
-Deploys MetalLB (v0.14.4) for LoadBalancer-type services on bare metal. The speaker DaemonSet tolerates the master node NoSchedule taint so ARP announcements come from all nodes. `ip-pool.yaml` assigns IPs from `192.168.1.200-192.168.1.220` via Layer 2 mode.
+Deploys MetalLB for LoadBalancer-type services on bare metal. `ip-pool.yaml` assigns IPs from `192.168.1.200-192.168.1.220` via Layer 2 mode.
 
 #### `applications/monitoring/`
-Deploys `kube-prometheus-stack` (v58.2.2) with Prometheus, Grafana, and Alertmanager. `ServerSideApply=true` is required for the large CRDs. `kubeEtcd`, `kubeControllerManager`, and `kubeScheduler` are disabled (not exposed by k3s). Prometheus has 7-day retention and a 10Gi PVC. Grafana pre-loads two community dashboards (gnetId 7249 and 1860). `operator-alerts.yaml` defines three PrometheusRules for the custom operator. `operator-dashboard.yaml` is a ConfigMap-based Grafana dashboard auto-loaded by the sidecar.
+Deploys `kube-prometheus-stack` with Prometheus and Grafana. `operator-alerts.yaml` defines three PrometheusRules for the custom operator. `operator-dashboard.yaml` is a ConfigMap-based Grafana dashboard auto-loaded by the sidecar.
 
 ---
 
 ### `gitops-setup/`
 
-Applied manually once during bootstrap. After this Argo CD manages everything.
+Applied manually once during setup. After this Argo CD manages everything.
 
-- **`root-app.yaml`** - the root Argo CD `Application` pointing at `applications/`. Applying this one manifest bootstraps the entire cluster. Uses `prune: true` and `selfHeal: true`.
-- **`argocd-project.yaml`** - an `AppProject` named `homelab` restricting which source repos and destination namespaces Argo CD may use. Includes a `syncWindows` deny rule blocking syncs to `kube-system` between 02:00-03:00 UTC.
+- **`root-app.yaml`** - the root Argo CD `Application` pointing at `applications/`.
 
 ---
 
@@ -175,7 +110,7 @@ Kyverno `ClusterPolicy` resources, all in `Enforce` mode.
 
 ### `renovate.json`
 
-Groups all Kubernetes infrastructure Helm chart updates into a single Monday/Thursday PR. Auto-merges patch-level Helm and GitHub Actions bumps. Groups Go module updates into a Monday PR. Uses a regexManager to track `ARGOCD_VERSION` in `scripts/argocd-setup.sh`. The `helm-values` file matcher detects chart version bumps inside Argo CD Application manifests.
+Groups all Kubernetes infrastructure Helm chart updates into a single daily PR. Auto-merges patch-level Helm and GitHub Actions bumps. Groups Go module updates into a Monday PR. Uses a regexManager to track `ARGOCD_VERSION` in `scripts/argocd-setup.sh`. The `helm-values` file matcher detects chart version bumps inside Argo CD Application manifests.
 
 ---
 
