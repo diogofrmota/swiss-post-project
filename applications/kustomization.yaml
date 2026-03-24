@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - argocd/application.yaml
+  - cert-manager/application.yaml
+  - cert-manager/cluster-issuer.yaml
+  - cilium/application.yaml
+  - cilium/network-policy-global.yaml
+  - golang-scraper/application.yaml
+  - kyverno/application.yaml
+  - metallb/application.yaml
+  - metallb/ip-pool.yaml
+  - monitoring/application.yaml
