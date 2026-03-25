@@ -15,7 +15,6 @@ spec:
         operator: NotIn
         values:
           - kube-system
-          - kyverno
           - argocd
           - monitoring
           - cert-manager
