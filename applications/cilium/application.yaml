@@ -31,6 +31,22 @@ spec:
             cpu: 500m
             memory: 512Mi
 
+        # Cilium operator resources (missing previously — critical on 2GB Pi nodes)
+        operator:
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          prometheus:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+              labels:
+                release: monitoring
+
         # Prometheus metrics
         prometheus:
           enabled: true
@@ -38,15 +54,6 @@ spec:
             enabled: true
             labels:
               release: monitoring
-
-        # Cilium operator metrics
-        operator:
-          prometheus:
-            enabled: true
-            serviceMonitor:
-              enabled: true
-              labels:
-                release: monitoring
 
         # Hubble observability
         hubble:
