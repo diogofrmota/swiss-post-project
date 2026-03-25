@@ -16,25 +16,6 @@ spec:
               protocol: TCP
   egress: []
 ---
-# Allow Prometheus to scrape metrics from the scraper pod
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: allow-prometheus-scrape
-  namespace: golang-scraper
-spec:
-  endpointSelector:
-    matchLabels:
-      app: golang-scraper
-  ingress:
-    - fromEndpoints:
-        - matchLabels:
-            app.kubernetes.io/name: prometheus
-      toPorts:
-        - ports:
-            - port: "8080"
-              protocol: TCP
----
 # Allow egress to the Golang Scrapper API (HTTPS)
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy

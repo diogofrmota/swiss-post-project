@@ -14,7 +14,7 @@
         "argo-cd",
         "cert-manager",
         "cilium",
-        "kube-prometheus-stack",
+        "prometheus-node-exporter",
         "kyverno",
         "metallb"
       ],

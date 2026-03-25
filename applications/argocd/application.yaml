@@ -25,12 +25,6 @@ spec:
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-prod
             tls: true
-          metrics:
-            enabled: true
-            serviceMonitor:
-              enabled: true
-              additionalLabels:
-                release: monitoring
           resources:
             requests:
               cpu: 25m
@@ -40,12 +34,6 @@ spec:
               memory: 192Mi
 
         controller:
-          metrics:
-            enabled: true
-            serviceMonitor:
-              enabled: true
-              additionalLabels:
-                release: monitoring
           resources:
             requests:
               cpu: 50m
@@ -55,12 +43,6 @@ spec:
               memory: 384Mi
 
         repoServer:
-          metrics:
-            enabled: true
-            serviceMonitor:
-              enabled: true
-              additionalLabels:
-                release: monitoring
           resources:
             requests:
               cpu: 25m

@@ -15,8 +15,8 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | Service | URL |
 |---------|-----|
 | Argo CD | https://argocd.diogomota.com |
-| Grafana | https://grafana.diogomota.com |
-| Prometheus | https://prometheus.diogomota.com |
+
+Prometheus and Grafana run on a separate local cluster and scrape node-exporter from the Pi nodes over the local network.
 
 All services are exposed via Cilium ingress with TLS certificates issued automatically by cert-manager (Let's Encrypt).
 
@@ -32,8 +32,7 @@ All services are exposed via Cilium ingress with TLS certificates issued automat
 | MetalLB | Bare-metal load balancer |
 | cert-manager | Automatic TLS via Let's Encrypt |
 | Kyverno | Policy enforcement |
-| Prometheus | Metrics & alerting |
-| Grafana | Dashboards & observability |
+| Node Exporter | Host-level metrics (scraped remotely) |
 | GitHub Actions | CI - build & push images |
 | Renovate Bot | Automated dependency updates |
 | Golang | Custom scraper |
@@ -61,7 +60,7 @@ Argo CD manages itself via GitOps. Deploys the `argo-cd` using Helm chart.
 Deploys cert-manager for automatic TLS certificate issuance.
 
 #### `applications/cilium/`
-Deploys Cilium as the CNI, replacing k3s default Flannel. Cilium handles all packet routing via eBPF and handles outgoing pod traffic at the eBPF layer instead of iptables. The ingress controller runs in shared load-balancer mode (one MetalLB IP for all ingresses). Hubble metrics are enabled for observability but the UI and relay are disabled to save memory on the 2GB Pi nodes.
+Deploys Cilium as the CNI, replacing k3s default Flannel. Cilium handles all packet routing via eBPF and handles outgoing pod traffic at the eBPF layer instead of iptables. The ingress controller runs in shared load-balancer mode (one MetalLB IP for all ingresses).
 
 #### `applications/golang-scraper/`
 Deploys the custom Golang scraper.
@@ -73,7 +72,7 @@ Deploys Kyverno as the admission controller. Policies live in `policies/` and ar
 Deploys MetalLB for LoadBalancer-type services on bare metal. `ip-pool.yaml` assigns IPs from `192.168.1.200-192.168.1.220` via Layer 2 mode.
 
 #### `applications/monitoring/`
-Deploys `kube-prometheus-stack` with Prometheus and Grafana.
+Deploys `prometheus-node-exporter` as a DaemonSet on all nodes. Exposes host metrics on port 9100 via hostPort so that the remote Prometheus instance can scrape each node directly.
 
 ---
 

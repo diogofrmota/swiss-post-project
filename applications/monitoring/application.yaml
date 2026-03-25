@@ -9,287 +9,28 @@ spec:
   project: default
   source:
     repoURL: https://prometheus-community.github.io/helm-charts
-    chart: kube-prometheus-stack
-    targetRevision: 58.2.2
+    chart: prometheus-node-exporter
+    targetRevision: 4.37.3
     helm:
       valuesObject:
-        prometheus:
-          prometheusSpec:
-            retention: 3d
-            resources:
-              requests:
-                cpu: 100m
-                memory: 256Mi
-              limits:
-                memory: 512Mi
-            storageSpec:
-              volumeClaimTemplate:
-                spec:
-                  accessModes: ["ReadWriteOnce"]
-                  resources:
-                    requests:
-                      storage: 5Gi
-          ingress:
-            enabled: true
-            ingressClassName: cilium
-            annotations:
-              cert-manager.io/cluster-issuer: letsencrypt-prod
-            hosts:
-              - prometheus.diogomota.com
-            tls:
-              - secretName: prometheus-tls
-                hosts:
-                  - prometheus.diogomota.com
-
-        grafana:
-          admin:
-            existingSecret: grafana-admin-secret
-            passwordKey: admin-password
-          service:
-            type: ClusterIP
-          ingress:
-            enabled: true
-            ingressClassName: cilium
-            annotations:
-              cert-manager.io/cluster-issuer: letsencrypt-prod
-            hosts:
-              - grafana.diogomota.com
-            tls:
-              - secretName: grafana-tls
-                hosts:
-                  - grafana.diogomota.com
-          resources:
-            requests:
-              cpu: 25m
-              memory: 64Mi
-            limits:
-              memory: 192Mi
-
-          persistence:
-            enabled: true
-            type: pvc
-            accessModes:
-              - ReadWriteOnce
-            size: 2Gi
-
-          dashboardProviders:
-            dashboardproviders.yaml:
-              apiVersion: 1
-              providers:
-                - name: default
-                  folder: ''
-                  type: file
-                  options:
-                    path: /var/lib/grafana/dashboards/default
-          dashboards:
-            default:
-              kubernetes-cluster:
-                gnetId: 7249
-                revision: 1
-                datasource: Prometheus
-              node-exporter:
-                gnetId: 1860
-                revision: 37
-                datasource: Prometheus
-              cilium-operator:
-                gnetId: 16611
-                revision: 1
-                datasource: Prometheus
-              argocd:
-                gnetId: 14584
-                revision: 1
-                datasource: Prometheus
-              golang-scraper:
-                json: |
-                  {
-                    "annotations": { "list": [] },
-                    "editable": true,
-                    "fiscalYearStartMonth": 0,
-                    "graphTooltip": 0,
-                    "links": [],
-                    "panels": [
-                      {
-                        "title": "Top story score",
-                        "type": "stat",
-                        "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
-                        "targets": [
-                          {
-                            "expr": "hn_top_story_score",
-                            "refId": "A"
-                          }
-                        ],
-                        "fieldConfig": {
-                          "defaults": {
-                            "thresholds": {
-                              "steps": [
-                                { "color": "green", "value": null },
-                                { "color": "yellow", "value": 500 },
-                                { "color": "red", "value": 1000 }
-                              ]
-                            }
-                          },
-                          "overrides": []
-                        }
-                      },
-                      {
-                        "title": "Top story comments",
-                        "type": "stat",
-                        "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
-                        "targets": [
-                          {
-                            "expr": "hn_top_story_comments",
-                            "refId": "A"
-                          }
-                        ],
-                        "fieldConfig": {
-                          "defaults": {
-                            "thresholds": {
-                              "steps": [
-                                { "color": "green", "value": null },
-                                { "color": "yellow", "value": 200 },
-                                { "color": "red", "value": 500 }
-                              ]
-                            }
-                          },
-                          "overrides": []
-                        }
-                      },
-                      {
-                        "title": "Total successful scrapes",
-                        "type": "stat",
-                        "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
-                        "targets": [
-                          {
-                            "expr": "hn_scrape_total",
-                            "refId": "A"
-                          }
-                        ],
-                        "fieldConfig": { "defaults": {}, "overrides": [] }
-                      },
-                      {
-                        "title": "Total scrape errors",
-                        "type": "stat",
-                        "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
-                        "targets": [
-                          {
-                            "expr": "hn_scrape_errors_total",
-                            "refId": "A"
-                          }
-                        ],
-                        "fieldConfig": {
-                          "defaults": {
-                            "thresholds": {
-                              "steps": [
-                                { "color": "green", "value": null },
-                                { "color": "red", "value": 1 }
-                              ]
-                            }
-                          },
-                          "overrides": []
-                        }
-                      },
-                      {
-                        "title": "Score over time",
-                        "type": "timeseries",
-                        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
-                        "targets": [
-                          {
-                            "expr": "hn_top_story_score",
-                            "legendFormat": "Score",
-                            "refId": "A"
-                          }
-                        ],
-                        "fieldConfig": { "defaults": {}, "overrides": [] }
-                      },
-                      {
-                        "title": "Comments over time",
-                        "type": "timeseries",
-                        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
-                        "targets": [
-                          {
-                            "expr": "hn_top_story_comments",
-                            "legendFormat": "Comments",
-                            "refId": "A"
-                          }
-                        ],
-                        "fieldConfig": { "defaults": {}, "overrides": [] }
-                      },
-                      {
-                        "title": "Scrape rate (per minute)",
-                        "type": "timeseries",
-                        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
-                        "targets": [
-                          {
-                            "expr": "rate(hn_scrape_total[5m]) * 60",
-                            "legendFormat": "Scrapes/min",
-                            "refId": "A"
-                          }
-                        ],
-                        "fieldConfig": { "defaults": {}, "overrides": [] }
-                      },
-                      {
-                        "title": "Error rate (per minute)",
-                        "type": "timeseries",
-                        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
-                        "targets": [
-                          {
-                            "expr": "rate(hn_scrape_errors_total[5m]) * 60",
-                            "legendFormat": "Errors/min",
-                            "refId": "A"
-                          }
-                        ],
-                        "fieldConfig": {
-                          "defaults": {
-                            "color": { "mode": "fixed", "fixedColor": "red" }
-                          },
-                          "overrides": []
-                        }
-                      },
-                      {
-                        "title": "Time since last scrape",
-                        "type": "stat",
-                        "gridPos": { "h": 6, "w": 24, "x": 0, "y": 22 },
-                        "targets": [
-                          {
-                            "expr": "time() - hn_last_scrape_timestamp_seconds",
-                            "refId": "A"
-                          }
-                        ],
-                        "fieldConfig": {
-                          "defaults": {
-                            "unit": "s",
-                            "thresholds": {
-                              "steps": [
-                                { "color": "green", "value": null },
-                                { "color": "yellow", "value": 120 },
-                                { "color": "red", "value": 300 }
-                              ]
-                            }
-                          },
-                          "overrides": []
-                        }
-                      }
-                    ],
-                    "schemaVersion": 39,
-                    "tags": ["golang-scraper", "hacker-news"],
-                    "templating": { "list": [] },
-                    "time": { "from": "now-6h", "to": "now" },
-                    "title": "Golang Scraper - Hacker News",
-                    "uid": "golang-scraper-hn"
-                  }
-
-        # Disabled — not exposed by k3s
-        kubeEtcd:
-          enabled: false
-        kubeControllerManager:
-          enabled: false
-        kubeScheduler:
-          enabled: false
-
-        # Disabled — not using alerting
-        alertmanager:
-          enabled: false
-
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 50m
+            memory: 32Mi
+        # hostPort exposes :9100 on each node IP so the
+        # remote Prometheus can scrape <node-ip>:9100/metrics
+        service:
+          type: ClusterIP
+          port: 9100
+        hostPort:
+          enabled: true
+          port: 9100
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            effect: NoSchedule
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
@@ -299,4 +40,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true

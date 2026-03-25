@@ -7,7 +7,7 @@ Complete guide to set up the Kubernetes homelab from bare metal to a fully GitOp
 - 3× Raspberry Pi 4B (2GB) with SD cards
 - A running network with access to the internet
 - A GitHub account with a fork or clone of this repository
-- A domain (e.g. `diogomota.com`) with DNS A records pointing at the MetalLB IP pool range, or a local DNS / `/etc/hosts` override for the ingress hostnames (`argocd.diogomota.com`, `grafana.diogomota.com`, `prometheus.diogomota.com`)
+- A domain (e.g. `diogomota.com`) with DNS A records pointing at the MetalLB IP pool range, or a local DNS / `/etc/hosts` override for the ingress hostnames (`argocd.diogomota.com`)
 
 ## Hardware Layout
 
@@ -135,16 +135,6 @@ stringData:
 EOF
 ```
 
-### Grafana admin password
-
-```bash
-kubectl create namespace monitoring
-
-kubectl create secret generic grafana-admin-secret \
-  -n monitoring \
-  --from-literal=admin-password='<YOUR_GRAFANA_PASSWORD>'
-```
-
 ### Argo CD webhook secret
 
 ```bash
@@ -260,25 +250,51 @@ kubectl get clusterpolicy
 
 All four policies should be listed and active.
 
-### 7.7 Access Grafana
+### 7.7 Check node-exporter
 
-Navigate to `https://grafana.diogomota.com` (or port-forward `svc/monitoring-grafana -n monitoring 3000:80`) and log in with user `admin` and the password you set in step 4.
+```bash
+kubectl get pods -n monitoring -o wide
+```
+
+One pod should be running on each node. Verify metrics are reachable from your network:
+
+```bash
+curl http://192.168.1.29:9100/metrics | head
+curl http://192.168.1.31:9100/metrics | head
+curl http://192.168.1.32:9100/metrics | head
+```
 
 ---
 
 ## 8 — Configure DNS
 
-Point your ingress hostnames at the MetalLB IP (or configure `/etc/hosts` for local access):
+Point your ingress hostname at the MetalLB IP (or configure `/etc/hosts` for local access):
 
 ```
 192.168.1.210   argocd.diogomota.com
-192.168.1.210   grafana.diogomota.com
-192.168.1.210   prometheus.diogomota.com
 ```
 
 ---
 
-## 9 — Accept Self-Signed Certificates (optional)
+## 9 — Remote Prometheus Configuration
+
+Prometheus and Grafana run on a separate cluster on the local network. Add the following scrape targets to your remote Prometheus configuration so it scrapes node-exporter from each Pi:
+
+```yaml
+scrape_configs:
+  - job_name: 'pi-cluster-node-exporter'
+    static_configs:
+      - targets:
+          - '192.168.1.29:9100'
+          - '192.168.1.31:9100'
+          - '192.168.1.32:9100'
+        labels:
+          cluster: pi-homelab
+```
+
+---
+
+## 10 — Accept Self-Signed Certificates (optional)
 
 If using self-signed certificates instead of Let's Encrypt, you can add them to your system trust store to avoid browser warnings.
 
@@ -296,19 +312,15 @@ sudo update-ca-certificates
 2. Double-click the `.crt` file
 3. Click "Install Certificate" → "Local Machine" → "Trusted Root Certification Authorities"
 
-Repeat for each service's certificate if desired.
-
 ---
 
 ## Memory Optimisation Notes
 
 All resource limits have been tuned for 2GB Raspberry Pi 4B nodes. Key decisions:
 
-- **Hubble UI and relay disabled** — Hubble metrics still flow to Prometheus, but the UI and relay pods are turned off to save ~400Mi across the cluster.
-- **Prometheus retention set to 3 days** with 5Gi storage (down from 7d / 10Gi).
-- **Grafana limited to 192Mi** (down from 256Mi).
+- **Prometheus and Grafana offloaded** — only node-exporter runs on the Pi cluster (32Mi limit per node). The full monitoring stack runs on a separate local cluster with more resources.
+- **Hubble disabled entirely** — no local Prometheus to consume the metrics.
 - **Argo CD components reduced** — server and repo-server capped at 192Mi, controller at 384Mi, redis and notifications at 48Mi each.
-- **Cilium agent capped at 256Mi** (down from 512Mi), operator at 128Mi.
+- **Cilium agent capped at 256Mi**, operator at 128Mi.
 - **cert-manager, Kyverno background controller, and MetalLB** all run under 96Mi limits.
-- **Alertmanager disabled** — not used in this setup.
-- **kubeEtcd, kubeControllerManager, kubeScheduler** monitoring disabled — k3s does not expose these.
+- **All ServiceMonitors removed** — no local Prometheus to process them.
