@@ -50,5 +50,29 @@
 
   "kubernetes": {
     "fileMatch": ["\\.yaml$"]
-  }
+  },
+
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track Cilium Helm chart version in Argo CD Application manifest",
+      "fileMatch": ["applications/cilium/application\\.yaml$"],
+      "matchStrings": [
+        "repoURL:\\s*https://helm\\.cilium\\.io\\s*\\n\\s*chart:\\s*cilium\\s*\\n\\s*targetRevision:\\s*(?<currentValue>[^\\s]+)"
+      ],
+      "depNameTemplate": "cilium",
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://helm.cilium.io"
+    },
+    {
+      "customType": "regex",
+      "description": "Track ARGOCD_VERSION in setup script",
+      "fileMatch": ["scripts/argocd-setup\\.sh$"],
+      "matchStrings": [
+        "ARGOCD_VERSION='(?<currentValue>[^']+)'"
+      ],
+      "depNameTemplate": "argoproj/argo-cd",
+      "datasourceTemplate": "github-releases"
+    }
+  ]
 }

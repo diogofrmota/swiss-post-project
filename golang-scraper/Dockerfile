@@ -1,6 +1,6 @@
 FROM golang:1.22-alpine AS builder
 WORKDIR /workspace
-COPY go.mod go.sum ./
+COPY go.mod ./
 RUN go mod download
 COPY main.go .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \

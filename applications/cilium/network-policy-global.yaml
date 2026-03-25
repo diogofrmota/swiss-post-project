@@ -22,11 +22,7 @@ spec:
           - cert-manager
   ingress:
     - fromEndpoints:
-        - matchExpressions:
-            # Allow traffic only from pods in the same namespace
-            - key: k8s:io.kubernetes.pod.namespace
-              operator: In
-              values: []   # Cilium resolves this to the endpoint's own namespace at runtime
+        - {}
   egress:
     # Allow egress to the Kubernetes API server
     - toEntities:

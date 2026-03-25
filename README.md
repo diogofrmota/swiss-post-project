@@ -10,7 +10,7 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | Raspberry Pi 4B (2GB) | k3s-worker-01 | 192.168.1.31 | Worker |
 | Raspberry Pi 4B (2GB) | k3s-worker-02 | 192.168.1.32 | Worker |
 
-## Dashboards & UIs
+## Dashboards
 
 | Service | URL |
 |---------|-----|
@@ -74,7 +74,7 @@ Deploys Kyverno as the admission controller. Policies live in `policies/` and ar
 Deploys MetalLB for LoadBalancer-type services on bare metal. `ip-pool.yaml` assigns IPs from `192.168.1.200-192.168.1.220` via Layer 2 mode.
 
 #### `applications/monitoring/`
-Deploys `kube-prometheus-stack` with Prometheus and Grafana. `operator-alerts.yaml` defines three PrometheusRules for the custom operator. `operator-dashboard.yaml` is a ConfigMap-based Grafana dashboard auto-loaded by the sidecar.
+Deploys `kube-prometheus-stack` with Prometheus and Grafana.
 
 ---
 

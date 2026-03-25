@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: cilium
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   source:
@@ -20,13 +22,36 @@ spec:
         bpf:
           masquerade: true
 
+        # Cilium agent resources
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
         # Hubble observability
         hubble:
           enabled: true
           relay:
             enabled: true
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                cpu: 200m
+                memory: 256Mi
           ui:
             enabled: true
+            resources:
+              requests:
+                cpu: 20m
+                memory: 64Mi
+              limits:
+                cpu: 100m
+                memory: 128Mi
             ingress:
               enabled: true
               className: cilium

@@ -9,7 +9,8 @@ metadata:
     policies.kyverno.io/category: Best Practices
     policies.kyverno.io/description: >-
       All containers must declare CPU and memory limits to prevent noisy-neighbour
-      problems on the Raspberry Pi nodes.
+      problems on the Raspberry Pi nodes. This includes init containers and
+      ephemeral containers.
 spec:
   validationFailureAction: Enforce
   background: true
@@ -35,6 +36,18 @@ spec:
         pattern:
           spec:
             containers:
+              - name: "*"
+                resources:
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"
+            =(initContainers):
+              - name: "*"
+                resources:
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"
+            =(ephemeralContainers):
               - name: "*"
                 resources:
                   limits:

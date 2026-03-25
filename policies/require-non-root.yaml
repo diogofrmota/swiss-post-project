@@ -9,7 +9,8 @@ metadata:
     policies.kyverno.io/category: Pod Security
     policies.kyverno.io/description: >-
       Running containers as root is a security risk. This policy requires
-      runAsNonRoot: true on all containers except in system namespaces.
+      runAsNonRoot: true on all containers, init containers, and ephemeral
+      containers except in system namespaces.
 spec:
   validationFailureAction: Enforce
   background: true
@@ -35,5 +36,11 @@ spec:
         pattern:
           spec:
             containers:
+              - securityContext:
+                  runAsNonRoot: true
+            =(initContainers):
+              - securityContext:
+                  runAsNonRoot: true
+            =(ephemeralContainers):
               - securityContext:
                   runAsNonRoot: true
