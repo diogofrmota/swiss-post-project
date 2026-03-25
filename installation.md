@@ -210,7 +210,7 @@ kubectl get nodes -o wide
 
 All three nodes should transition from `NotReady` to `Ready` once the Cilium agent is running on each.
 
-### 5.3 Configure Cilium L2 Announcement (optional)
+### 5.3 Configure Cilium L2 Announcement
 
 Create a Cilium L2 announcement policy to advertise LoadBalancer IPs:
 
@@ -281,6 +281,33 @@ What the script does:
 5. Prints the initial admin password and a port-forward command.
 
 After the root app syncs, Argo CD will automatically deploy every application defined under `applications/` in dependency order (controlled by `argocd.argoproj.io/sync-wave` annotations). Because the bootstrap used the same Helm chart and values, Argo CD will recognise the existing resources and adopt them cleanly.
+
+### Configure DNS / etc/hosts
+
+For local access to Argo CD and other services, add the following entries to your `/etc/hosts` file:
+
+```bash
+# Add these lines to /etc/hosts
+echo "192.168.1.29 argocd.diogomota.com" | sudo tee -a /etc/hosts
+echo "(ip for this cluster) grafana.diogomota.com" | sudo tee -a /etc/hosts
+echo "(ip for this cluster) prometheus.diogomota.com" | sudo tee -a /etc/hosts
+```
+
+### Access Argo CD
+Argo CD is exposed via NodePort. Get the NodePort and access the UI:
+
+```bash
+# Get the NodePort
+kubectl get svc argocd-server -n argocd
+
+# Access Argo CD UI
+# HTTP: http://argocd.diogomota.com:<NODEPORT>
+# Example: http://argocd.diogomota.com:30814
+
+# Login with admin and the initial password:
+kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d
+echo ""
+```
 
 ### Change the Argo CD admin password
 

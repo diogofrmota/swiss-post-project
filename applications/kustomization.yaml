@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - argocd/application.yaml
+  - argocd/certificate.yaml  # Add this line
   - cert-manager/application.yaml
   - cert-manager/cluster-issuer.yaml
   - cilium/application.yaml

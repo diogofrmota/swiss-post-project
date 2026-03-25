@@ -22,7 +22,7 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | Grafana | https://grafana.diogomota.com |
 | Prometheus | https://prometheus.diogomota.com |
 
-Prometheus and Grafana run on a separate local cluster and scrape node-exporter from the Pi nodes over the local network.
+**Note:** Argo CD uses HTTPS with Let's Encrypt certificates. Access it at https://argocd.diogomota.com:30662 (port 30662 for HTTPS NodePort). Prometheus and Grafana run on a separate local cluster and scrape node-exporter from the Pi nodes over the local network.
 
 All services are exposed via Cilium ingress with TLS certificates issued automatically by cert-manager (Let's Encrypt).
 

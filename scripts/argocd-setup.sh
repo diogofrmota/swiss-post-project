@@ -19,12 +19,14 @@ echo "Installing Argo CD ${ARGOCD_CHART_VERSION} via Helm"
 helm install argocd argo/argo-cd --version "${ARGOCD_CHART_VERSION}" \
   --namespace argocd \
   --set global.domain=argocd.diogomota.com \
-  --set server.service.type=ClusterIP \
-  --set server.ingress.enabled=true \
-  --set server.ingress.ingressClassName=cilium \
-  --set 'server.ingress.annotations.cert-manager\.io/cluster-issuer=letsencrypt-prod' \
-  --set server.ingress.tls=true \
-  --set configs.params."server\.insecure"=true \
+  --set server.service.type=NodePort \
+  --set server.service.nodePortHttp=30814 \
+  --set server.service.nodePortHttps=30662 \
+  --set server.certificate.enabled=true \
+  --set server.certificate.issuer.kind=ClusterIssuer \
+  --set server.certificate.issuer.name=letsencrypt-prod \
+  --set server.certificate.secretName=argocd-server-tls \
+  --set configs.params."server\.insecure"=false \
   --set server.resources.requests.cpu=25m \
   --set server.resources.requests.memory=64Mi \
   --set server.resources.limits.cpu=150m \
@@ -58,9 +60,16 @@ kubectl apply -f gitops-setup/root-app.yaml
 
 echo ""
 echo "Argo CD setup complete!"
+echo ""
+echo "Add this to /etc/hosts on your local machine:"
+echo "  192.168.1.29 argocd.diogomota.com"
+echo ""
+echo "Argo CD is available at: https://argocd.diogomota.com:30662"
+echo ""
 echo "Argo CD initial admin password:"
 kubectl get secret argocd-initial-admin-secret -n argocd \
   -o jsonpath="{.data.password}" | base64 -d
 echo ""
-echo "Port-forward:  kubectl port-forward svc/argocd-server -n argocd 8080:443"
-echo "URL:           https://localhost:8080"
+echo ""
+echo "Login with: argocd login argocd.diogomota.com:30662 --username admin"
+echo "Note: Since it's a self-signed certificate initially, you'll need to add --insecure flag until cert-manager issues the certificate"

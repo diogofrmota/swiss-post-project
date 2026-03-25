@@ -18,13 +18,23 @@ spec:
 
         server:
           service:
-            type: ClusterIP
+            type: NodePort
+            nodePortHttp: 30814
+            nodePortHttps: 30662
+          # Enable TLS with cert-manager
           ingress:
+            enabled: false  # Keep false for NodePort
+          # Configure TLS certificates
+          certificate:
             enabled: true
-            ingressClassName: cilium
-            annotations:
-              cert-manager.io/cluster-issuer: letsencrypt-prod
-            tls: true
+            issuer:
+              group: cert-manager.io
+              kind: ClusterIssuer
+              name: letsencrypt-prod
+            secretName: argocd-server-tls
+          # Enable TLS on the server
+          extraArgs:
+            - --insecure=false  # Disable insecure mode
           resources:
             requests:
               cpu: 25m
@@ -32,6 +42,15 @@ spec:
             limits:
               cpu: 150m
               memory: 192Mi
+          # Mount the TLS certificate
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /app/config/tls
+              readOnly: true
+          volumes:
+            - name: tls-certs
+              secret:
+                secretName: argocd-server-tls
 
         controller:
           resources:
@@ -80,7 +99,9 @@ spec:
 
         configs:
           params:
-            server.insecure: true
+            server.insecure: false  # Disable insecure mode
+            server.cert: /app/config/tls/tls.crt
+            server.key: /app/config/tls/tls.key
 
   destination:
     server: https://kubernetes.default.svc
