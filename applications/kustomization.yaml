@@ -7,7 +7,6 @@ resources:
   - cert-manager/cluster-issuer.yaml
   - cilium/application.yaml
   - cilium/network-policy-global.yaml
-  - golang-scraper/application.yaml
   - kyverno/application.yaml
   - metallb/application.yaml
   - metallb/ip-pool.yaml
