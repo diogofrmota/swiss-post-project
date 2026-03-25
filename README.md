@@ -2,6 +2,10 @@
 
 A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, managed fully via GitOps with Argo CD.
 
+<p align="center">
+  <img src="assets/cluster.jpeg" alt="Cluster" width="350">
+</p>
+
 ## Hardware
 
 | Node | Hostname | IP | Role |
