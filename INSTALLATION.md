@@ -6,9 +6,8 @@ Complete guide to set up the Kubernetes homelab from bare metal to a fully GitOp
 
 - 3× Raspberry Pi 4B (2GB) with SD cards
 - A running network with access to the internet
-- A GitHub account with a fork or clone of this repository
 - A Cloudflare account managing your domain, with an API token that has `Zone:DNS:Edit` permissions
-- A domain (e.g. `diogomota.com`) with DNS A records pointing at the MetalLB IP pool range, or a local DNS / `/etc/hosts` override for the ingress hostnames (`argocd.diogomota.com`)
+- A local DNS at `/etc/hosts` to override for the ingress hostnames (`argocd.diogomota.com`)
 
 ## Hardware Layout
 
@@ -47,6 +46,7 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install -y curl wget git vim jq openssh-server
 sudo systemctl enable ssh
 sudo systemctl start ssh
+sudo systemctl status ssh
 ```
 
 ### 2.2 Enable cgroups
@@ -134,7 +134,7 @@ metadata:
   namespace: cert-manager
 type: Opaque
 stringData:
-  api-token: <YOUR_CLOUDFLARE_API_TOKEN>
+  api-token: <CLOUDFLARE_API_TOKEN>
 EOF
 ```
 

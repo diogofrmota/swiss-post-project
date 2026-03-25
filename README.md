@@ -47,4 +47,4 @@ All services are exposed via Cilium ingress with TLS certificates issued automat
 
 ## Installation
 
-The file [INSTALLATION.md](INSTALLATION.md) has the detailed setup instructions covering OS preparation, k3s cluster bootstrap, Argo CD deployment and post-install verification.
+The file [installation.md](installation.md) has the detailed setup instructions covering OS preparation, k3s cluster bootstrap, Argo CD deployment and post-install verification.
