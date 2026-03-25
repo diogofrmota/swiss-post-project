@@ -35,7 +35,6 @@ All services are exposed via Cilium ingress with TLS certificates issued automat
 | Helm | Package manager |
 | Kustomize | Manifest customisation |
 | Cilium | CNI, network policies, ingress |
-| MetalLB | Bare-metal load balancer |
 | cert-manager | Automatic TLS via Let's Encrypt |
 | Kyverno | Policy enforcement |
 | Node Exporter | Host-level metrics (scraped remotely) |

@@ -18,15 +18,13 @@ spec:
         k8sServiceHost: 192.168.1.29
         k8sServicePort: 6443
 
-        # IPAM configuration to match k3s default podCIDR (10.42.0.0/16)
+        # IPAM configuration to match k3s default podCIDR
         ipam:
           operator:
             clusterPoolIPv4PodCIDRList:
               - "10.42.0.0/16"
 
-        # Upgrade compatibility — set to the version you are upgrading FROM
-        # so Cilium preserves backward-compatible behaviour during rollout.
-        # Bump this after each successful minor upgrade.
+        # Upgrade compatibility
         upgradeCompatibility: "1.18"
 
         # eBPF datapath
@@ -60,7 +58,18 @@ spec:
         ingressController:
           enabled: true
           default: true
-          loadbalancerMode: shared
+          loadbalancerMode: shared  # Cilium will create LoadBalancer services
+
+        # Enable Cilium's LoadBalancer IPAM
+        l2announcements:
+          enabled: true
+        loadBalancer:
+          l2:
+            announcements:
+              enabled: true
+            # Define the IP pool for LoadBalancer services
+            announcementsIPPool:
+              - 192.168.1.200-192.168.1.220
 
   destination:
     server: https://kubernetes.default.svc

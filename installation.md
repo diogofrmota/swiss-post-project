@@ -289,13 +289,13 @@ Open `https://localhost:8080`, log in with user `admin` and the password from st
 kubectl -n kube-system exec ds/cilium -- cilium status --brief
 ```
 
-### 8.4 Check MetalLB IP allocation
+### 8.4 Check Cilium Loadbalancer IP allocation
 
 ```bash
 kubectl get svc -A | grep LoadBalancer
 ```
 
-IPs should be assigned from the `192.168.1.200-192.168.1.220` pool.
+IPs should be assigned from the `?????` pool.
 
 ### 8.5 Check certificates
 
@@ -332,7 +332,7 @@ curl http://192.168.1.32:9100/metrics | head
 
 ## 9 — Configure DNS
 
-Point your ingress hostname at the MetalLB IP (or configure `/etc/hosts` for local access):
+Point your ingress hostname at the Cilium loadbalancer IP (or configure `/etc/hosts` for local access):
 
 ```
 192.168.1.210   argocd.diogomota.com
@@ -389,4 +389,4 @@ All resource limits have been tuned for 2GB Raspberry Pi 4B nodes. Key decisions
 - **Hubble disabled entirely** — no local Prometheus to consume the metrics.
 - **Argo CD components reduced** — server and repo-server capped at 192Mi, controller at 384Mi, redis and notifications at 48Mi each.
 - **Cilium agent capped at 256Mi**, operator at 128Mi.
-- **cert-manager, Kyverno background controller, and MetalLB** all run under 96Mi limits.
+- **cert-manager** runs under 96Mi limits.
