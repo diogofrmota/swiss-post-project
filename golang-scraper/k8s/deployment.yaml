@@ -20,6 +20,9 @@ spec:
         runAsUser: 65532
       containers:
         - name: scraper
+          # TODO: Consider pinning to a SHA-tagged image (e.g. ghcr.io/diogofrmota/golang-scraper:<sha>)
+          # instead of :latest for reproducible deploys. The CI already pushes SHA tags.
+          # You can use Renovate's docker manager or Argo CD Image Updater to automate bumps.
           image: ghcr.io/diogofrmota/golang-scraper:latest
           imagePullPolicy: Always
           ports:

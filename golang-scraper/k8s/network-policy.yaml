@@ -1,4 +1,9 @@
-# Default deny all ingress and egress for the golang-scraper namespace
+# Default deny all ingress and egress for the golang-scraper namespace.
+#
+# NOTE: Cilium network policies are ADDITIVE — having egress: [] here blocks
+# all egress by default, but the allow-weather-api and allow-dns policies
+# below open specific flows on top of this baseline. A pod's effective policy
+# is the union of all matching CiliumNetworkPolicy objects.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -16,11 +21,11 @@ spec:
               protocol: TCP
   egress: []
 ---
-# Allow egress to the Golang Scrapper API (HTTPS)
+# Allow egress to the Open-Meteo weather API (HTTPS)
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: allow-golang-scraper-api
+  name: allow-weather-api
   namespace: golang-scraper
 spec:
   endpointSelector:
@@ -28,13 +33,13 @@ spec:
       app: golang-scraper
   egress:
     - toFQDNs:
-        - matchName: "hacker-news.firebaseio.com"
+        - matchName: "api.open-meteo.com"
       toPorts:
         - ports:
             - port: "443"
               protocol: TCP
 ---
-# Allow DNS
+# Allow DNS resolution via CoreDNS (required for FQDN-based egress rules)
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:

@@ -9,79 +9,93 @@ import (
 	"time"
 )
 
-// HN top stories API — no auth, always available
-const hnTopStoriesURL = "https://hacker-news.firebaseio.com/v0/topstories.json"
-const hnItemURL = "https://hacker-news.firebaseio.com/v0/item/%d.json"
+// Open-Meteo API — free, no auth required.
+// Fetches current weather for Lisbon, Porto, Bern and Geneva in a single call
+// using the multi-location endpoint.
+const openMeteoURL = "https://api.open-meteo.com/v1/forecast?" +
+	"latitude=38.7167,41.1496,46.9481,46.2044" +
+	"&longitude=-9.1333,-8.6110,7.4474,6.1432" +
+	"&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code" +
+	"&timezone=auto"
 
-type Story struct {
-	Score       int    `json:"score"`
-	Descendants int    `json:"descendants"`
-	Type        string `json:"type"`
+// City names mapped by index in the API response.
+var cities = []string{"lisbon", "porto", "bern", "geneva"}
+
+// openMeteoResponse represents the top-level JSON array returned when
+// querying multiple locations. Open-Meteo returns a JSON array when
+// multiple latitudes/longitudes are provided.
+type openMeteoResponse struct {
+	Current struct {
+		Temperature  float64 `json:"temperature_2m"`
+		Humidity     float64 `json:"relative_humidity_2m"`
+		WindSpeed    float64 `json:"wind_speed_10m"`
+		WeatherCode  int     `json:"weather_code"`
+	} `json:"current"`
+}
+
+type cityWeather struct {
+	Temperature float64
+	Humidity    float64
+	WindSpeed   float64
+	WeatherCode int
 }
 
 type metrics struct {
-	mu              sync.RWMutex
-	topStoryScore   float64
-	topStoryComments float64
-	scrapeCount     float64
-	scrapeErrors    float64
-	lastScrapeTime  float64 // unix timestamp
+	mu             sync.RWMutex
+	weather        map[string]cityWeather // keyed by city name
+	scrapeCount    float64
+	scrapeErrors   float64
+	lastScrapeTime float64 // unix timestamp
 }
 
-var m = &metrics{}
+var m = &metrics{
+	weather: make(map[string]cityWeather),
+}
 
 func scrape() {
-	resp, err := http.Get(hnTopStoriesURL)
+	resp, err := http.Get(openMeteoURL)
 	if err != nil {
 		m.mu.Lock()
 		m.scrapeErrors++
 		m.mu.Unlock()
-		log.Printf("error fetching top stories: %v", err)
+		log.Printf("error fetching weather: %v", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	var ids []int
-	if err := json.NewDecoder(resp.Body).Decode(&ids); err != nil {
+	// Open-Meteo returns a JSON array when multiple locations are queried.
+	var results []openMeteoResponse
+	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
 		m.mu.Lock()
 		m.scrapeErrors++
 		m.mu.Unlock()
-		log.Printf("error decoding top stories: %v", err)
+		log.Printf("error decoding weather response: %v", err)
 		return
 	}
 
-	if len(ids) == 0 {
-		return
-	}
-
-	// Fetch only the top story to keep it simple
-	itemResp, err := http.Get(fmt.Sprintf(hnItemURL, ids[0]))
-	if err != nil {
+	if len(results) != len(cities) {
 		m.mu.Lock()
 		m.scrapeErrors++
 		m.mu.Unlock()
-		log.Printf("error fetching top item: %v", err)
-		return
-	}
-	defer itemResp.Body.Close()
-
-	var story Story
-	if err := json.NewDecoder(itemResp.Body).Decode(&story); err != nil {
-		m.mu.Lock()
-		m.scrapeErrors++
-		m.mu.Unlock()
-		log.Printf("error decoding story: %v", err)
+		log.Printf("unexpected number of results: got %d, want %d", len(results), len(cities))
 		return
 	}
 
 	m.mu.Lock()
-	m.topStoryScore = float64(story.Score)
-	m.topStoryComments = float64(story.Descendants)
+	for i, city := range cities {
+		c := results[i].Current
+		m.weather[city] = cityWeather{
+			Temperature: c.Temperature,
+			Humidity:    c.Humidity,
+			WindSpeed:   c.WindSpeed,
+			WeatherCode: c.WeatherCode,
+		}
+		log.Printf("scraped %s: temp=%.1f°C humidity=%.0f%% wind=%.1fkm/h code=%d",
+			city, c.Temperature, c.Humidity, c.WindSpeed, c.WeatherCode)
+	}
 	m.scrapeCount++
 	m.lastScrapeTime = float64(time.Now().Unix())
 	m.mu.Unlock()
-
-	log.Printf("scraped: score=%d comments=%d", story.Score, story.Descendants)
 }
 
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
@@ -89,25 +103,43 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	defer m.mu.RUnlock()
 
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
-	fmt.Fprintf(w, "# HELP hn_top_story_score Score of the current #1 Hacker News story\n")
-	fmt.Fprintf(w, "# TYPE hn_top_story_score gauge\n")
-	fmt.Fprintf(w, "hn_top_story_score %g\n\n", m.topStoryScore)
 
-	fmt.Fprintf(w, "# HELP hn_top_story_comments Comment count of the current #1 Hacker News story\n")
-	fmt.Fprintf(w, "# TYPE hn_top_story_comments gauge\n")
-	fmt.Fprintf(w, "hn_top_story_comments %g\n\n", m.topStoryComments)
+	// Per-city gauges
+	for _, city := range cities {
+		cw, ok := m.weather[city]
+		if !ok {
+			continue
+		}
 
-	fmt.Fprintf(w, "# HELP hn_scrape_total Total number of successful scrapes\n")
-	fmt.Fprintf(w, "# TYPE hn_scrape_total counter\n")
-	fmt.Fprintf(w, "hn_scrape_total %g\n\n", m.scrapeCount)
+		fmt.Fprintf(w, "# HELP weather_temperature_celsius Current temperature in degrees Celsius\n")
+		fmt.Fprintf(w, "# TYPE weather_temperature_celsius gauge\n")
+		fmt.Fprintf(w, "weather_temperature_celsius{city=%q} %g\n\n", city, cw.Temperature)
 
-	fmt.Fprintf(w, "# HELP hn_scrape_errors_total Total number of failed scrapes\n")
-	fmt.Fprintf(w, "# TYPE hn_scrape_errors_total counter\n")
-	fmt.Fprintf(w, "hn_scrape_errors_total %g\n\n", m.scrapeErrors)
+		fmt.Fprintf(w, "# HELP weather_relative_humidity_percent Current relative humidity percentage\n")
+		fmt.Fprintf(w, "# TYPE weather_relative_humidity_percent gauge\n")
+		fmt.Fprintf(w, "weather_relative_humidity_percent{city=%q} %g\n\n", city, cw.Humidity)
 
-	fmt.Fprintf(w, "# HELP hn_last_scrape_timestamp_seconds Unix timestamp of the last successful scrape\n")
-	fmt.Fprintf(w, "# TYPE hn_last_scrape_timestamp_seconds gauge\n")
-	fmt.Fprintf(w, "hn_last_scrape_timestamp_seconds %g\n", m.lastScrapeTime)
+		fmt.Fprintf(w, "# HELP weather_wind_speed_kmh Current wind speed in km/h\n")
+		fmt.Fprintf(w, "# TYPE weather_wind_speed_kmh gauge\n")
+		fmt.Fprintf(w, "weather_wind_speed_kmh{city=%q} %g\n\n", city, cw.WindSpeed)
+
+		fmt.Fprintf(w, "# HELP weather_code WMO weather interpretation code\n")
+		fmt.Fprintf(w, "# TYPE weather_code gauge\n")
+		fmt.Fprintf(w, "weather_code{city=%q} %d\n\n", city, cw.WeatherCode)
+	}
+
+	// Scraper operational metrics
+	fmt.Fprintf(w, "# HELP weather_scrape_total Total number of successful scrapes\n")
+	fmt.Fprintf(w, "# TYPE weather_scrape_total counter\n")
+	fmt.Fprintf(w, "weather_scrape_total %g\n\n", m.scrapeCount)
+
+	fmt.Fprintf(w, "# HELP weather_scrape_errors_total Total number of failed scrapes\n")
+	fmt.Fprintf(w, "# TYPE weather_scrape_errors_total counter\n")
+	fmt.Fprintf(w, "weather_scrape_errors_total %g\n\n", m.scrapeErrors)
+
+	fmt.Fprintf(w, "# HELP weather_last_scrape_timestamp_seconds Unix timestamp of the last successful scrape\n")
+	fmt.Fprintf(w, "# TYPE weather_last_scrape_timestamp_seconds gauge\n")
+	fmt.Fprintf(w, "weather_last_scrape_timestamp_seconds %g\n", m.lastScrapeTime)
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
@@ -116,10 +148,11 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// Initial scrape immediately, then every 60s
+	// Initial scrape immediately, then every 5 minutes.
+	// Weather data doesn't change as frequently as HN — 5min is plenty.
 	scrape()
 	go func() {
-		ticker := time.NewTicker(60 * time.Second)
+		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
 		for range ticker.C {
 			scrape()
@@ -129,7 +162,7 @@ func main() {
 	http.HandleFunc("/metrics", metricsHandler)
 	http.HandleFunc("/healthz", healthHandler)
 
-	log.Println("starting server on :8080")
+	log.Println("starting weather scraper on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
