@@ -33,11 +33,11 @@ spec:
                 release: monitoring
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 25m
+              memory: 64Mi
             limits:
-              cpu: 200m
-              memory: 256Mi
+              cpu: 150m
+              memory: 192Mi
 
         controller:
           metrics:
@@ -48,11 +48,11 @@ spec:
                 release: monitoring
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 50m
+              memory: 128Mi
             limits:
-              cpu: 500m
-              memory: 512Mi
+              cpu: 300m
+              memory: 384Mi
 
         repoServer:
           metrics:
@@ -63,38 +63,38 @@ spec:
                 release: monitoring
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 25m
+              memory: 64Mi
             limits:
-              cpu: 200m
-              memory: 256Mi
+              cpu: 150m
+              memory: 192Mi
 
         redis:
           resources:
             requests:
               cpu: 10m
-              memory: 32Mi
+              memory: 16Mi
             limits:
               cpu: 50m
-              memory: 64Mi
+              memory: 48Mi
 
         notifications:
           resources:
             requests:
-              cpu: 10m
-              memory: 32Mi
+              cpu: 5m
+              memory: 16Mi
             limits:
-              cpu: 50m
-              memory: 64Mi
+              cpu: 25m
+              memory: 48Mi
 
         applicationSet:
           resources:
             requests:
-              cpu: 10m
-              memory: 64Mi
+              cpu: 5m
+              memory: 32Mi
             limits:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 25m
+              memory: 64Mi
 
         configs:
           params:

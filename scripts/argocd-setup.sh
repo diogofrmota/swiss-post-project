@@ -10,7 +10,7 @@ echo "Creating namespace argocd"
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 
 echo "Installing Argo CD ${ARGOCD_VERSION}"
-kubectl apply -n argocd -f \
+kubectl create -n argocd -f \
   "https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml"
 
 echo "Waiting for Argo CD server to be ready..."

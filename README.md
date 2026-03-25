@@ -17,7 +17,6 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | Argo CD | https://argocd.diogomota.com |
 | Grafana | https://grafana.diogomota.com |
 | Prometheus | https://prometheus.diogomota.com |
-| Hubble UI (Cilium) | https://hubble.diogomota.com |
 
 All services are exposed via Cilium ingress with TLS certificates issued automatically by cert-manager (Let's Encrypt).
 
@@ -62,7 +61,7 @@ Argo CD manages itself via GitOps. Deploys the `argo-cd` using Helm chart.
 Deploys cert-manager for automatic TLS certificate issuance.
 
 #### `applications/cilium/`
-Deploys Cilium as the CNI, replacing k3s default Flannel. Cilium handles all packet routing via eBPF and handles outgoing pod traffic at the eBPF layer instead of iptables. The ingress controller runs in shared load-balancer mode (one MetalLB IP for all ingresses).
+Deploys Cilium as the CNI, replacing k3s default Flannel. Cilium handles all packet routing via eBPF and handles outgoing pod traffic at the eBPF layer instead of iptables. The ingress controller runs in shared load-balancer mode (one MetalLB IP for all ingresses). Hubble metrics are enabled for observability but the UI and relay are disabled to save memory on the 2GB Pi nodes.
 
 #### `applications/golang-scraper/`
 Deploys the custom Golang scraper.

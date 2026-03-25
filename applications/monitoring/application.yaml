@@ -15,20 +15,20 @@ spec:
       valuesObject:
         prometheus:
           prometheusSpec:
-            retention: 7d
+            retention: 3d
             resources:
               requests:
-                cpu: 200m
-                memory: 400Mi
+                cpu: 100m
+                memory: 256Mi
               limits:
-                memory: 800Mi
+                memory: 512Mi
             storageSpec:
               volumeClaimTemplate:
                 spec:
                   accessModes: ["ReadWriteOnce"]
                   resources:
                     requests:
-                      storage: 10Gi
+                      storage: 5Gi
           ingress:
             enabled: true
             ingressClassName: cilium
@@ -60,12 +60,11 @@ spec:
                   - grafana.diogomota.com
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 25m
+              memory: 64Mi
             limits:
-              memory: 256Mi
+              memory: 192Mi
 
-          # Persistent storage for Grafana
           persistence:
             enabled: true
             type: pvc
@@ -84,7 +83,6 @@ spec:
                     path: /var/lib/grafana/dashboards/default
           dashboards:
             default:
-              # Existing dashboards
               kubernetes-cluster:
                 gnetId: 7249
                 revision: 1
@@ -93,21 +91,14 @@ spec:
                 gnetId: 1860
                 revision: 37
                 datasource: Prometheus
-              # Cilium dashboards
               cilium-operator:
                 gnetId: 16611
                 revision: 1
                 datasource: Prometheus
-              cilium-hubble:
-                gnetId: 16613
-                revision: 1
-                datasource: Prometheus
-              # Argo CD dashboard
               argocd:
                 gnetId: 14584
                 revision: 1
                 datasource: Prometheus
-              # Golang scraper (custom)
               golang-scraper:
                 json: |
                   {

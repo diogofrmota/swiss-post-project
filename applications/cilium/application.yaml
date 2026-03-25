@@ -22,24 +22,24 @@ spec:
         bpf:
           masquerade: true
 
-        # Cilium agent resources
+        # Cilium agent resources (reduced for 2GB Pi)
         resources:
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 50m
+            memory: 100Mi
           limits:
-            cpu: 500m
-            memory: 512Mi
+            cpu: 300m
+            memory: 256Mi
 
-        # Cilium operator resources (missing previously — critical on 2GB Pi nodes)
+        # Cilium operator resources
         operator:
           resources:
             requests:
-              cpu: 50m
-              memory: 64Mi
+              cpu: 20m
+              memory: 32Mi
             limits:
-              cpu: 200m
-              memory: 256Mi
+              cpu: 100m
+              memory: 128Mi
           prometheus:
             enabled: true
             serviceMonitor:
@@ -55,7 +55,7 @@ spec:
             labels:
               release: monitoring
 
-        # Hubble observability
+        # Hubble - metrics only, no UI or relay
         hubble:
           enabled: true
           metrics:
@@ -64,41 +64,14 @@ spec:
               - drop
               - tcp
               - flow
-              - icmp
-              - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
             serviceMonitor:
               enabled: true
               labels:
                 release: monitoring
           relay:
-            enabled: true
-            resources:
-              requests:
-                cpu: 50m
-                memory: 64Mi
-              limits:
-                cpu: 200m
-                memory: 256Mi
+            enabled: false
           ui:
-            enabled: true
-            resources:
-              requests:
-                cpu: 20m
-                memory: 64Mi
-              limits:
-                cpu: 100m
-                memory: 128Mi
-            ingress:
-              enabled: true
-              className: cilium
-              annotations:
-                cert-manager.io/cluster-issuer: letsencrypt-prod
-              hosts:
-                - hubble.diogomota.com
-              tls:
-                - secretName: hubble-ui-tls
-                  hosts:
-                    - hubble.diogomota.com
+            enabled: false
 
         # Ingress controller (replaces Nginx)
         ingressController:
