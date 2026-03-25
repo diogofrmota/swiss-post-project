@@ -179,6 +179,11 @@ helm install cilium cilium/cilium --version 1.19.2 \
   --set ingressController.enabled=true \
   --set ingressController.default=true \
   --set ingressController.loadbalancerMode=shared \
+  --set l2announcements.enabled=true \
+  --set loadBalancer.mode=snat \
+  --set loadBalancer.l7.enabled=true \
+  --set loadBalancer.algorithm=maglev \
+  --set loadBalancer.cidr="{192.168.1.200-192.168.1.220}" \
   --set operator.replicas=1 \
   --set resources.requests.cpu=50m \
   --set resources.requests.memory=100Mi \

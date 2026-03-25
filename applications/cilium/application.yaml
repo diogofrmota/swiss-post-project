@@ -24,9 +24,6 @@ spec:
             clusterPoolIPv4PodCIDRList:
               - "10.42.0.0/16"
 
-        # Upgrade compatibility
-        upgradeCompatibility: "1.18"
-
         # eBPF datapath
         bpf:
           masquerade: true
@@ -54,20 +51,19 @@ spec:
         hubble:
           enabled: false
 
-        # Ingress controller (replaces Nginx)
+        # Ingress controller
         ingressController:
           enabled: true
           default: true
-          loadbalancerMode: shared  # Cilium will create LoadBalancer services
+          loadbalancerMode: shared
 
-        # Enable Cilium's LoadBalancer IPAM
-        l2announcements:
-          enabled: true
+        # LoadBalancer configuration (FIXED)
         loadBalancer:
+          mode: snat  # Changed from dsr to snat - this was the critical fix!
+          algorithm: maglev
           l2:
             announcements:
               enabled: true
-            # Define the IP pool for LoadBalancer services
             announcementsIPPool:
               - 192.168.1.200-192.168.1.220
 
