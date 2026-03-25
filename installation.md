@@ -168,11 +168,12 @@ The values here must match `applications/cilium/application.yaml` so Argo CD can
 helm repo add cilium https://helm.cilium.io/
 helm repo update
 
-helm install cilium cilium/cilium --version 1.16.19 \
+helm install cilium cilium/cilium --version 1.19.2 \
   --namespace kube-system \
   --set kubeProxyReplacement=true \
   --set k8sServiceHost=192.168.1.29 \
   --set k8sServicePort=6443 \
+  --set ipam.operator.clusterPoolIPv4PodCIDRList="10.42.0.0/16" \
   --set bpf.masquerade=true \
   --set hubble.enabled=false \
   --set ingressController.enabled=true \
@@ -357,7 +358,10 @@ scrape_configs:
 
 ---
 
-## 11 — Accept Self-Signed Certificates (optional)
+## 11 — Kyverno Policies (Optional)
+Kyverno is disabled in this setup to conserve RAM on the Raspberry Pi nodes. However, the policy configuration files are kept in the repository (policies/) for reference. If you have more memory available, you can enable Kyverno by uncommenting it in applications/kustomization.yaml and updating the sync waves.
+
+## 12 — Accept Self-Signed Certificates (optional)
 
 If using self-signed certificates instead of Let's Encrypt, you can add them to your system trust store to avoid browser warnings.
 
