@@ -111,11 +111,102 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.33.3+k3s1" \
 kubectl get nodes -o wide
 ```
 
-All three nodes should show `Ready`.
+All three nodes will show `NotReady` — this is expected because there is no CNI yet. Cilium is installed in the next step.
+
+> **Important:** `kubectl` and `helm` commands must be run from the **master node** (`k3s-master`). The k3s API server only runs on the master, and the kubeconfig is automatically created at `/etc/rancher/k3s/k3s.yaml`. Running `kubectl` on a worker node without configuration will fail with `connection refused` on `localhost:8080`.
+
+### 3.4 Configure kubectl on worker nodes or a laptop (optional)
+
+If you want to run `kubectl` from a worker node or your local machine instead of SSH-ing into the master, copy the kubeconfig and update the server address:
+
+```bash
+# On the master — print the kubeconfig
+sudo cat /etc/rancher/k3s/k3s.yaml
+
+# On the worker or laptop — save it and fix the server address
+mkdir -p ~/.kube
+# Paste the kubeconfig content into ~/.kube/config, then replace the
+# loopback address with the master's IP:
+sed -i 's|server: https://127.0.0.1:6443|server: https://192.168.1.29:6443|' ~/.kube/config
+```
+
+Verify it works:
+
+```bash
+kubectl get nodes -o wide
+```
+
+This is optional — all remaining steps in this guide assume you are running commands on the master node.
 
 ---
 
-## 4 — Create Required Secrets
+## 4 — Install Helm
+
+Helm is needed to bootstrap Cilium before Argo CD is available.
+
+```bash
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+helm version
+```
+
+---
+
+## 5 — Bootstrap Cilium (CNI)
+
+Since k3s was installed without Flannel and kube-proxy, the nodes will stay `NotReady` until a CNI is installed. Cilium must be bootstrapped manually via Helm before Argo CD can start — Argo CD pods themselves need a working network.
+
+Once Argo CD is running, its Cilium Application (sync-wave 0) will adopt and manage this Helm release going forward.
+
+### 5.1 Install Cilium
+
+The values here must match `applications/cilium/application.yaml` so Argo CD can adopt the release cleanly.
+
+```bash
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+
+helm install cilium cilium/cilium --version 1.16.19 \
+  --namespace kube-system \
+  --set kubeProxyReplacement=true \
+  --set k8sServiceHost=192.168.1.29 \
+  --set k8sServicePort=6443 \
+  --set bpf.masquerade=true \
+  --set hubble.enabled=false \
+  --set ingressController.enabled=true \
+  --set ingressController.default=true \
+  --set ingressController.loadbalancerMode=shared \
+  --set operator.replicas=1 \
+  --set resources.requests.cpu=50m \
+  --set resources.requests.memory=100Mi \
+  --set resources.limits.cpu=300m \
+  --set resources.limits.memory=256Mi \
+  --set operator.resources.requests.cpu=20m \
+  --set operator.resources.requests.memory=32Mi \
+  --set operator.resources.limits.cpu=100m \
+  --set operator.resources.limits.memory=128Mi
+```
+
+### 5.2 Wait for Cilium and nodes to become Ready
+
+```bash
+# Watch Cilium pods come up
+kubectl get pods -n kube-system -l app.kubernetes.io/part-of=cilium -w
+
+# Verify Cilium is healthy
+kubectl -n kube-system exec ds/cilium -- cilium status --brief
+
+# All nodes should now show Ready
+kubectl get nodes -o wide
+```
+
+All three nodes should transition from `NotReady` to `Ready` once the Cilium agent is running on each.
+
+---
+
+## 6 — Create Required Secrets
 
 This secret must exist before Argo CD syncs the applications.
 
@@ -140,19 +231,7 @@ EOF
 
 ---
 
-## 5 — Install Helm
-
-```bash
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
-./get_helm.sh
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-helm version
-```
-
----
-
-## 6 — Install Argo CD and Bootstrap GitOps
+## 7 — Install Argo CD and Bootstrap GitOps
 
 The `scripts/argocd-setup.sh` script handles everything:
 
@@ -185,9 +264,9 @@ kubectl -n argocd patch secret argocd-secret -p \
 
 ---
 
-## 7 — Verify the Deployment
+## 8 — Verify the Deployment
 
-### 7.1 Monitor Argo CD sync
+### 8.1 Monitor Argo CD sync
 
 ```bash
 kubectl get applications -n argocd -w
@@ -195,21 +274,21 @@ kubectl get applications -n argocd -w
 
 Wait for all applications to show **Synced** and **Healthy**.
 
-### 7.2 Access Argo CD
+### 8.2 Access Argo CD
 
 ```bash
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 ```
 
-Open `https://localhost:8080`, log in with user `admin` and the password from step 6.
+Open `https://localhost:8080`, log in with user `admin` and the password from step 7.
 
-### 7.3 Check Cilium
+### 8.3 Check Cilium
 
 ```bash
 kubectl -n kube-system exec ds/cilium -- cilium status --brief
 ```
 
-### 7.4 Check MetalLB IP allocation
+### 8.4 Check MetalLB IP allocation
 
 ```bash
 kubectl get svc -A | grep LoadBalancer
@@ -217,7 +296,7 @@ kubectl get svc -A | grep LoadBalancer
 
 IPs should be assigned from the `192.168.1.200-192.168.1.220` pool.
 
-### 7.5 Check certificates
+### 8.5 Check certificates
 
 ```bash
 kubectl get certificates -A
@@ -226,7 +305,7 @@ kubectl get clusterissuer
 
 The `letsencrypt-prod` ClusterIssuer should show `Ready: True`. Certificates use DNS-01 validation via Cloudflare, so they work without exposing any ports to the internet.
 
-### 7.6 Check Kyverno policies
+### 8.6 Check Kyverno policies
 
 ```bash
 kubectl get clusterpolicy
@@ -234,7 +313,7 @@ kubectl get clusterpolicy
 
 All four policies should be listed and active.
 
-### 7.7 Check node-exporter
+### 8.7 Check node-exporter
 
 ```bash
 kubectl get pods -n monitoring -o wide
@@ -250,7 +329,7 @@ curl http://192.168.1.32:9100/metrics | head
 
 ---
 
-## 8 — Configure DNS
+## 9 — Configure DNS
 
 Point your ingress hostname at the MetalLB IP (or configure `/etc/hosts` for local access):
 
@@ -260,7 +339,7 @@ Point your ingress hostname at the MetalLB IP (or configure `/etc/hosts` for loc
 
 ---
 
-## 9 — Remote Prometheus Configuration
+## 10 — Remote Prometheus Configuration
 
 Prometheus and Grafana run on a separate cluster on the local network. Add the following scrape targets to your remote Prometheus configuration so it scrapes node-exporter from each Pi:
 
@@ -278,7 +357,7 @@ scrape_configs:
 
 ---
 
-## 10 — Accept Self-Signed Certificates (optional)
+## 11 — Accept Self-Signed Certificates (optional)
 
 If using self-signed certificates instead of Let's Encrypt, you can add them to your system trust store to avoid browser warnings.
 
