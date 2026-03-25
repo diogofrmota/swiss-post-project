@@ -6,6 +6,6 @@ resources:
   - cert-manager/application.yaml
   - cert-manager/cluster-issuer.yaml
   - cilium/application.yaml
-  - cilium/network-policy-global.yaml
+  - cilium/l2-announcement-policy.yaml
   - monitoring/application.yaml
   - ../policies

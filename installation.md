@@ -223,8 +223,7 @@ metadata:
   namespace: kube-system
 spec:
   serviceSelector:
-    matchLabels:
-      cilium-l2-announce: "true"
+    matchLabels: {}
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux
