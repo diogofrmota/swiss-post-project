@@ -7,6 +7,7 @@ Complete guide to set up the Kubernetes homelab from bare metal to a fully GitOp
 - 3× Raspberry Pi 4B (2GB) with SD cards
 - A running network with access to the internet
 - A GitHub account with a fork or clone of this repository
+- A Cloudflare account managing your domain, with an API token that has `Zone:DNS:Edit` permissions
 - A domain (e.g. `diogomota.com`) with DNS A records pointing at the MetalLB IP pool range, or a local DNS / `/etc/hosts` override for the ingress hostnames (`argocd.diogomota.com`)
 
 ## Hardware Layout
@@ -116,9 +117,11 @@ All three nodes should show `Ready`.
 
 ## 4 — Create Required Secrets
 
-These secrets must exist before Argo CD syncs the applications.
+This secret must exist before Argo CD syncs the applications.
 
-### Cloudflare API token (for DNS challenges)
+### Cloudflare API token (for DNS-01 challenges)
+
+The Cloudflare API token needs `Zone:DNS:Edit` permissions. cert-manager uses it to create TXT records for Let's Encrypt DNS-01 validation.
 
 ```bash
 kubectl create namespace cert-manager
@@ -132,26 +135,6 @@ metadata:
 type: Opaque
 stringData:
   api-token: <YOUR_CLOUDFLARE_API_TOKEN>
-EOF
-```
-
-### Argo CD webhook secret
-
-```bash
-kubectl create namespace argocd
-
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: argo-webhook-secret
-  namespace: argocd
-  labels:
-    argocd.argoproj.io/secret-type: repository
-    app.kubernetes.io/part-of: argocd
-type: Opaque
-stringData:
-  secret: <YOUR_WEBHOOK_SECRET>
 EOF
 ```
 
@@ -238,9 +221,10 @@ IPs should be assigned from the `192.168.1.200-192.168.1.220` pool.
 
 ```bash
 kubectl get certificates -A
+kubectl get clusterissuer
 ```
 
-All certificates should show `Ready: True` once Let's Encrypt issues them. If using local DNS only (no public domain), the HTTP-01 challenge will fail — switch to a self-signed `ClusterIssuer` or use DNS-01 for internal setups.
+The `letsencrypt-prod` ClusterIssuer should show `Ready: True`. Certificates use DNS-01 validation via Cloudflare, so they work without exposing any ports to the internet.
 
 ### 7.6 Check Kyverno policies
 
@@ -323,4 +307,3 @@ All resource limits have been tuned for 2GB Raspberry Pi 4B nodes. Key decisions
 - **Argo CD components reduced** — server and repo-server capped at 192Mi, controller at 384Mi, redis and notifications at 48Mi each.
 - **Cilium agent capped at 256Mi**, operator at 128Mi.
 - **cert-manager, Kyverno background controller, and MetalLB** all run under 96Mi limits.
-- **All ServiceMonitors removed** — no local Prometheus to process them.
