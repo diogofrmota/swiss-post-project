@@ -28,6 +28,29 @@ spec:
         bpf:
           masquerade: true
 
+        # Disable Hubble — no local Prometheus to consume the metrics
+        hubble:
+          enabled: false
+
+        # Ingress controller
+        ingressController:
+          enabled: true
+          default: true
+          loadbalancerMode: shared
+
+        # L2 announcements for LoadBalancer IPs
+        l2announcements:
+          enabled: true
+
+        # LoadBalancer configuration
+        loadBalancer:
+          mode: snat
+          l7:
+            enabled: true
+          algorithm: maglev
+          cidr:
+            - "192.168.1.200-192.168.1.220"
+
         # Cilium agent resources
         resources:
           requests:
@@ -47,25 +70,6 @@ spec:
             limits:
               cpu: 100m
               memory: 128Mi
-
-        hubble:
-          enabled: false
-
-        # Ingress controller
-        ingressController:
-          enabled: true
-          default: true
-          loadbalancerMode: shared
-
-        # LoadBalancer configuration (FIXED)
-        loadBalancer:
-          mode: snat  # Changed from dsr to snat - this was the critical fix!
-          algorithm: maglev
-          l2:
-            announcements:
-              enabled: true
-            announcementsIPPool:
-              - 192.168.1.200-192.168.1.220
 
   destination:
     server: https://kubernetes.default.svc

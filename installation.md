@@ -142,7 +142,7 @@ This is optional — all remaining steps in this guide assume you are running co
 
 ## 4 — Install Helm
 
-Helm is needed to bootstrap Cilium before Argo CD is available.
+Helm is needed to bootstrap Cilium and Argo CD before GitOps takes over.
 
 ```bash
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
@@ -162,7 +162,7 @@ Once Argo CD is running, its Cilium Application (sync-wave 0) will adopt and man
 
 ### 5.1 Install Cilium
 
-The values here must match `applications/cilium/application.yaml` so Argo CD can adopt the release cleanly.
+> **Critical:** The values here **must exactly match** `applications/cilium/application.yaml` so that Argo CD can adopt the release cleanly without creating duplicate or conflicting resources.
 
 ```bash
 helm repo add cilium https://helm.cilium.io/
@@ -264,6 +264,8 @@ EOF
 
 ## 7 — Install Argo CD and Bootstrap GitOps
 
+> **Why Helm?** Argo CD must be bootstrapped via the **same Helm chart and values** that the Argo CD Application (`applications/argocd/application.yaml`) uses. If the bootstrap uses raw manifests while the Application uses a Helm chart, the two create resources with different labels and annotations, resulting in duplicate pods that can never roll out.
+
 The `scripts/argocd-setup.sh` script handles everything:
 
 ```bash
@@ -274,12 +276,12 @@ chmod +x scripts/argocd-setup.sh
 What the script does:
 
 1. Creates the `argocd` namespace.
-2. Installs the Argo CD manifests for the version pinned in the script.
+2. Adds the Argo Helm repo and installs Argo CD via the `argo-cd` Helm chart (version pinned in the script to match `applications/argocd/application.yaml`).
 3. Waits for the `argocd-server` deployment to become ready.
 4. Applies `gitops-setup/root-app.yaml` — the App of Apps that points at `applications/`.
 5. Prints the initial admin password and a port-forward command.
 
-After the root app syncs, Argo CD will automatically deploy every application defined under `applications/` in dependency order (controlled by `argocd.argoproj.io/sync-wave` annotations).
+After the root app syncs, Argo CD will automatically deploy every application defined under `applications/` in dependency order (controlled by `argocd.argoproj.io/sync-wave` annotations). Because the bootstrap used the same Helm chart and values, Argo CD will recognise the existing resources and adopt them cleanly.
 
 ### Change the Argo CD admin password
 
@@ -325,7 +327,7 @@ kubectl -n kube-system exec ds/cilium -- cilium status --brief
 kubectl get svc -A | grep LoadBalancer
 ```
 
-IPs should be assigned from the `?????` pool.
+IPs should be assigned from the `192.168.1.200-192.168.1.220` pool.
 
 ### 8.5 Check certificates
 
@@ -343,6 +345,8 @@ kubectl get clusterpolicy
 ```
 
 All four policies should be listed and active.
+
+> **Note:** Kyverno is disabled by default to conserve RAM on 2GB Pi nodes. See step 11 if you want to enable it.
 
 ### 8.7 Check node-exporter
 
@@ -389,7 +393,10 @@ scrape_configs:
 ---
 
 ## 11 — Kyverno Policies (Optional)
-Kyverno is disabled in this setup to conserve RAM on the Raspberry Pi nodes. However, the policy configuration files are kept in the repository (policies/) for reference. If you have more memory available, you can enable Kyverno by uncommenting it in applications/kustomization.yaml and updating the sync waves.
+
+Kyverno is disabled in this setup to conserve RAM on the Raspberry Pi nodes. However, the policy configuration files are kept in the repository (`policies/`) for reference. If you have more memory available, you can enable Kyverno by uncommenting `applications/kyverno/application.yaml` and adding it to `applications/kustomization.yaml`.
+
+---
 
 ## 12 — Accept Self-Signed Certificates (optional)
 
@@ -420,3 +427,37 @@ All resource limits have been tuned for 2GB Raspberry Pi 4B nodes. Key decisions
 - **Argo CD components reduced** — server and repo-server capped at 192Mi, controller at 384Mi, redis and notifications at 48Mi each.
 - **Cilium agent capped at 256Mi**, operator at 128Mi.
 - **cert-manager** runs under 96Mi limits.
+- **Kyverno disabled** — saves ~300Mi of RAM across admission and background controllers.
+
+---
+
+## Troubleshooting
+
+### Duplicate pods / stuck rollouts in Argo CD
+
+If you see two versions of Argo CD pods (e.g. two `argocd-redis` pods, one running and one stuck in `Init:0/1`), it means the bootstrap method and the Argo CD Application are using different installation approaches. Fix by deleting the namespace and re-running the Helm-based setup script:
+
+```bash
+kubectl delete namespace argocd
+./scripts/argocd-setup.sh
+```
+
+### Nodes stuck on NotReady
+
+Cilium is the CNI — without it, nodes cannot schedule pods. Verify Cilium pods are running:
+
+```bash
+kubectl get pods -n kube-system -l app.kubernetes.io/part-of=cilium
+```
+
+If no Cilium pods exist, re-run step 5.
+
+### OOMKilled pods
+
+On 2GB nodes, memory is tight. Check which pods are consuming the most:
+
+```bash
+kubectl top pods -A --sort-by=memory
+```
+
+Consider disabling non-essential workloads or tightening resource limits.
