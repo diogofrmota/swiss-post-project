@@ -18,7 +18,6 @@ spec:
           - kyverno
           - argocd
           - monitoring
-          - metallb-system
           - cert-manager
   ingress:
     - fromEndpoints:

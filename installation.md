@@ -205,6 +205,31 @@ kubectl get nodes -o wide
 
 All three nodes should transition from `NotReady` to `Ready` once the Cilium agent is running on each.
 
+### 5.3 Configure Cilium L2 Announcement (optional)
+
+Create a Cilium L2 announcement policy to advertise LoadBalancer IPs:
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: home-l2-policy
+  namespace: kube-system
+spec:
+  serviceSelector:
+    matchLabels:
+      cilium-l2-announce: "true"
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/os: linux
+  interfaces:
+    - eth0
+EOF
+```
+
+This policy will announce LoadBalancer IPs from all nodes via ARP/NDP. You can label your services with cilium-l2-announce: "true" to have them announced, or modify the policy to match all LoadBalancer services.
+
 ---
 
 ## 6 — Create Required Secrets
