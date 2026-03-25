@@ -29,7 +29,6 @@ spec:
                 - kyverno
                 - argocd
                 - monitoring
-                - metallb-system
                 - cert-manager
       validate:
         message: "Containers must not run as root. Set securityContext.runAsNonRoot: true."
