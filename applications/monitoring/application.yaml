@@ -64,6 +64,15 @@ spec:
               memory: 128Mi
             limits:
               memory: 256Mi
+
+          # Persistent storage for Grafana
+          persistence:
+            enabled: true
+            type: pvc
+            accessModes:
+              - ReadWriteOnce
+            size: 2Gi
+
           dashboardProviders:
             dashboardproviders.yaml:
               apiVersion: 1
@@ -75,6 +84,7 @@ spec:
                     path: /var/lib/grafana/dashboards/default
           dashboards:
             default:
+              # Existing dashboards
               kubernetes-cluster:
                 gnetId: 7249
                 revision: 1
@@ -83,6 +93,199 @@ spec:
                 gnetId: 1860
                 revision: 37
                 datasource: Prometheus
+              # Cilium dashboards
+              cilium-operator:
+                gnetId: 16611
+                revision: 1
+                datasource: Prometheus
+              cilium-hubble:
+                gnetId: 16613
+                revision: 1
+                datasource: Prometheus
+              # Argo CD dashboard
+              argocd:
+                gnetId: 14584
+                revision: 1
+                datasource: Prometheus
+              # Golang scraper (custom)
+              golang-scraper:
+                json: |
+                  {
+                    "annotations": { "list": [] },
+                    "editable": true,
+                    "fiscalYearStartMonth": 0,
+                    "graphTooltip": 0,
+                    "links": [],
+                    "panels": [
+                      {
+                        "title": "Top story score",
+                        "type": "stat",
+                        "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+                        "targets": [
+                          {
+                            "expr": "hn_top_story_score",
+                            "refId": "A"
+                          }
+                        ],
+                        "fieldConfig": {
+                          "defaults": {
+                            "thresholds": {
+                              "steps": [
+                                { "color": "green", "value": null },
+                                { "color": "yellow", "value": 500 },
+                                { "color": "red", "value": 1000 }
+                              ]
+                            }
+                          },
+                          "overrides": []
+                        }
+                      },
+                      {
+                        "title": "Top story comments",
+                        "type": "stat",
+                        "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+                        "targets": [
+                          {
+                            "expr": "hn_top_story_comments",
+                            "refId": "A"
+                          }
+                        ],
+                        "fieldConfig": {
+                          "defaults": {
+                            "thresholds": {
+                              "steps": [
+                                { "color": "green", "value": null },
+                                { "color": "yellow", "value": 200 },
+                                { "color": "red", "value": 500 }
+                              ]
+                            }
+                          },
+                          "overrides": []
+                        }
+                      },
+                      {
+                        "title": "Total successful scrapes",
+                        "type": "stat",
+                        "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+                        "targets": [
+                          {
+                            "expr": "hn_scrape_total",
+                            "refId": "A"
+                          }
+                        ],
+                        "fieldConfig": { "defaults": {}, "overrides": [] }
+                      },
+                      {
+                        "title": "Total scrape errors",
+                        "type": "stat",
+                        "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+                        "targets": [
+                          {
+                            "expr": "hn_scrape_errors_total",
+                            "refId": "A"
+                          }
+                        ],
+                        "fieldConfig": {
+                          "defaults": {
+                            "thresholds": {
+                              "steps": [
+                                { "color": "green", "value": null },
+                                { "color": "red", "value": 1 }
+                              ]
+                            }
+                          },
+                          "overrides": []
+                        }
+                      },
+                      {
+                        "title": "Score over time",
+                        "type": "timeseries",
+                        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+                        "targets": [
+                          {
+                            "expr": "hn_top_story_score",
+                            "legendFormat": "Score",
+                            "refId": "A"
+                          }
+                        ],
+                        "fieldConfig": { "defaults": {}, "overrides": [] }
+                      },
+                      {
+                        "title": "Comments over time",
+                        "type": "timeseries",
+                        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+                        "targets": [
+                          {
+                            "expr": "hn_top_story_comments",
+                            "legendFormat": "Comments",
+                            "refId": "A"
+                          }
+                        ],
+                        "fieldConfig": { "defaults": {}, "overrides": [] }
+                      },
+                      {
+                        "title": "Scrape rate (per minute)",
+                        "type": "timeseries",
+                        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+                        "targets": [
+                          {
+                            "expr": "rate(hn_scrape_total[5m]) * 60",
+                            "legendFormat": "Scrapes/min",
+                            "refId": "A"
+                          }
+                        ],
+                        "fieldConfig": { "defaults": {}, "overrides": [] }
+                      },
+                      {
+                        "title": "Error rate (per minute)",
+                        "type": "timeseries",
+                        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+                        "targets": [
+                          {
+                            "expr": "rate(hn_scrape_errors_total[5m]) * 60",
+                            "legendFormat": "Errors/min",
+                            "refId": "A"
+                          }
+                        ],
+                        "fieldConfig": {
+                          "defaults": {
+                            "color": { "mode": "fixed", "fixedColor": "red" }
+                          },
+                          "overrides": []
+                        }
+                      },
+                      {
+                        "title": "Time since last scrape",
+                        "type": "stat",
+                        "gridPos": { "h": 6, "w": 24, "x": 0, "y": 22 },
+                        "targets": [
+                          {
+                            "expr": "time() - hn_last_scrape_timestamp_seconds",
+                            "refId": "A"
+                          }
+                        ],
+                        "fieldConfig": {
+                          "defaults": {
+                            "unit": "s",
+                            "thresholds": {
+                              "steps": [
+                                { "color": "green", "value": null },
+                                { "color": "yellow", "value": 120 },
+                                { "color": "red", "value": 300 }
+                              ]
+                            }
+                          },
+                          "overrides": []
+                        }
+                      }
+                    ],
+                    "schemaVersion": 39,
+                    "tags": ["golang-scraper", "hacker-news"],
+                    "templating": { "list": [] },
+                    "time": { "from": "now-6h", "to": "now" },
+                    "title": "Golang Scraper - Hacker News",
+                    "uid": "golang-scraper-hn"
+                  }
 
         # Disabled — not exposed by k3s
         kubeEtcd:
@@ -92,14 +295,9 @@ spec:
         kubeScheduler:
           enabled: false
 
+        # Disabled — not using alerting
         alertmanager:
-          alertmanagerSpec:
-            resources:
-              requests:
-                cpu: 10m
-                memory: 32Mi
-              limits:
-                memory: 64Mi
+          enabled: false
 
   destination:
     server: https://kubernetes.default.svc

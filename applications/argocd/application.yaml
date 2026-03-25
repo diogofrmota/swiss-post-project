@@ -18,13 +18,19 @@ spec:
 
         server:
           service:
-            type: ClusterIP          # ingress handles external access now
+            type: ClusterIP
           ingress:
             enabled: true
             ingressClassName: cilium
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-prod
             tls: true
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+              additionalLabels:
+                release: monitoring
           resources:
             requests:
               cpu: 50m
@@ -34,6 +40,12 @@ spec:
               memory: 256Mi
 
         controller:
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+              additionalLabels:
+                release: monitoring
           resources:
             requests:
               cpu: 100m
@@ -43,6 +55,12 @@ spec:
               memory: 512Mi
 
         repoServer:
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+              additionalLabels:
+                release: monitoring
           resources:
             requests:
               cpu: 50m
@@ -80,7 +98,7 @@ spec:
 
         configs:
           params:
-            server.insecure: true     # TLS terminated at the ingress
+            server.insecure: true
 
   destination:
     server: https://kubernetes.default.svc

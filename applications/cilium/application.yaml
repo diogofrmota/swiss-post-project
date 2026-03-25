@@ -31,9 +31,38 @@ spec:
             cpu: 500m
             memory: 512Mi
 
+        # Prometheus metrics
+        prometheus:
+          enabled: true
+          serviceMonitor:
+            enabled: true
+            labels:
+              release: monitoring
+
+        # Cilium operator metrics
+        operator:
+          prometheus:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+              labels:
+                release: monitoring
+
         # Hubble observability
         hubble:
           enabled: true
+          metrics:
+            enabled:
+              - dns
+              - drop
+              - tcp
+              - flow
+              - icmp
+              - httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction
+            serviceMonitor:
+              enabled: true
+              labels:
+                release: monitoring
           relay:
             enabled: true
             resources:
