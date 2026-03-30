@@ -49,7 +49,7 @@ kubectl create namespace monitoring
 ```bash
 helm install prometheus prometheus-community/prometheus \
   --namespace monitoring \
-  --values monitoring/prometheus/values.yaml
+  --values prometheus/values.yaml
 ```
 
 Verify Prometheus is up:
@@ -74,7 +74,7 @@ open http://localhost:9090/targets
 ```bash
 helm install grafana grafana/grafana \
   --namespace monitoring \
-  --values monitoring/grafana/values.yaml
+  --values grafana/values.yaml
 ```
 
 Verify Grafana is up:
