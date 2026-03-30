@@ -4,21 +4,25 @@ set -e
 
 echo "Starting homelab restart..."
 
-# Step 1 — kube-system core components
+# Step 1 — kube-system core components + Cilium
 echo ""
-echo "Restarting kube-system (2/4)"
+echo "Restarting kube-system (1/3)"
 kubectl -n kube-system rollout restart deployment coredns
 kubectl -n kube-system rollout restart deployment local-path-provisioner
 kubectl -n kube-system rollout restart deployment metrics-server
 kubectl -n kube-system rollout restart deployment cilium-operator
+kubectl -n kube-system rollout restart daemonset cilium
+kubectl -n kube-system rollout restart daemonset cilium-envoy
 echo "  Waiting for kube-system..."
 kubectl -n kube-system rollout status deployment coredns --timeout=120s
 kubectl -n kube-system rollout status deployment cilium-operator --timeout=120s
+kubectl -n kube-system rollout status daemonset cilium --timeout=120s
+kubectl -n kube-system rollout status daemonset cilium-envoy --timeout=120s
 sleep 10
 
 # Step 2 — cert-manager
 echo ""
-echo "Restarting cert-manager (3/4)"
+echo "Restarting cert-manager (2/3)"
 kubectl -n cert-manager rollout restart deployment cert-manager
 kubectl -n cert-manager rollout restart deployment cert-manager-cainjector
 kubectl -n cert-manager rollout restart deployment cert-manager-webhook
@@ -28,7 +32,7 @@ sleep 10
 
 # Step 3 — ArgoCD
 echo ""
-echo "Restarting argocd (4/4)"
+echo "Restarting argocd (3/3)"
 kubectl -n argocd rollout restart deployment argocd-applicationset-controller
 kubectl -n argocd rollout restart deployment argocd-dex-server
 kubectl -n argocd rollout restart deployment argocd-notifications-controller
