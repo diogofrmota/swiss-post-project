@@ -10,6 +10,10 @@ resources:
 - appset-apps.yaml
 
 configMapGenerator:
+- name: argocd-cm
+  behavior: merge
+  literals:
+  - kustomize.buildOptions=--enable-helm
 - name: argocd-cmd-params-cm
   literals:
   - server.insecure=true
