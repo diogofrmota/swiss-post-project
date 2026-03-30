@@ -222,7 +222,54 @@ To create the token in Cloudflare: go to My Profile > API Tokens > Create Token 
 
 ---
 
-## 9. Sync Applications via Argo CD
+## 9. Install Node Exporter on Each Host
+
+Node exporter runs as a systemd service directly on each Pi — not as a Kubernetes pod. The `apps/node-exporter` manifests create a Kubernetes Service and Endpoints that point to the host IPs, allowing Prometheus (on the separate VM) to scrape metrics through the cluster network. Without this step, those endpoints have nothing to connect to.
+
+Run the following on **all three nodes** (k3s-master, k3s-worker-01, k3s-worker-02):
+
+```bash
+wget https://github.com/prometheus/node_exporter/releases/download/v1.7.0/node_exporter-1.7.0.linux-arm64.tar.gz
+tar xvf node_exporter-1.7.0.linux-arm64.tar.gz
+sudo cp node_exporter-1.7.0.linux-arm64/node_exporter /usr/local/bin/
+rm -rf node_exporter-1.7.0.linux-arm64*
+
+sudo tee /etc/systemd/system/node_exporter.service <<EOF
+[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+User=nobody
+ExecStart=/usr/local/bin/node_exporter
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable node_exporter
+sudo systemctl start node_exporter
+```
+
+Verify it is running on each node:
+
+```bash
+curl http://localhost:9100/metrics | head -3
+```
+
+Once installed on all three nodes, apply the Endpoints object from the master (ArgoCD excludes it from automatic sync):
+
+```bash
+kubectl apply -f apps/node-exporter/endpoints.yaml
+kubectl get endpoints node-exporter -n node-exporter
+```
+
+You should see all three node IPs listed. Prometheus can now scrape `http://node-exporter.node-exporter.svc:9100/metrics` from the separate cluster.
+
+---
+
+## 10. Sync Applications via Argo CD
 
 Once Argo CD is running, it will automatically detect the ApplicationSets and begin syncing:
 
@@ -240,7 +287,7 @@ kubectl -n argocd get applications
 
 ---
 
-## 10. Local DNS Configuration
+## 11. Local DNS Configuration
 
 The shared Cilium Gateway gets a LoadBalancer IP from the `CiliumLoadBalancerIPPool`. To access services like `argocd.diogomota.com` from your laptop (which is on the same network), you need to resolve that hostname to the gateway's LB IP.
 
@@ -288,7 +335,7 @@ This covers `argocd.diogomota.com`, any future services, and avoids updating DNS
 
 ---
 
-## 11. Post-Install Verification
+## 12. Post-Install Verification
 
 ```bash
 # Check all nodes are Ready
@@ -306,6 +353,14 @@ kubectl get clusterissuer letsencrypt-prod
 
 # Check Argo CD applications are synced
 kubectl -n argocd get applications
+
+# Check node-exporter endpoints are registered
+kubectl get endpoints node-exporter -n node-exporter
+
+# Test node-exporter metrics from each host
+curl http://192.168.1.29:9100/metrics | head -3
+curl http://192.168.1.31:9100/metrics | head -3
+curl http://192.168.1.32:9100/metrics | head -3
 
 # Test access from your laptop (after DNS is configured)
 curl -k https://argocd.diogomota.com
@@ -328,3 +383,5 @@ curl -k https://argocd.diogomota.com
 **Argo CD OOM crashes**: If you're using the HA manifest on low-memory nodes, switch to the non-HA manifest in `apps/argocd/kustomization.yaml`.
 
 **`kubectl apply` annotation too large error**: Use `--server-side --force-conflicts` instead of a plain `kubectl apply`.
+
+**Node exporter endpoints not found**: The Endpoints resource is excluded from ArgoCD auto-sync. Apply it manually with `kubectl apply -f apps/node-exporter/endpoints.yaml` after node-exporter is running on all hosts.

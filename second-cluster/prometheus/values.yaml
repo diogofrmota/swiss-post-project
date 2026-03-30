@@ -1,0 +1,47 @@
+server:
+  persistentVolume:
+    enabled: false
+  service:
+    type: NodePort
+    nodePort: 30090
+
+alertmanager:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+kube-state-metrics:
+  enabled: false
+
+nodeExporter:
+  enabled: false
+
+serverFiles:
+  prometheus.yml:
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      - job_name: "node-exporter-pi"
+        static_configs:
+          - targets:
+              - "192.168.1.29:9100"
+              - "192.168.1.31:9100"
+              - "192.168.1.32:9100"
+            labels:
+              cluster: "pi-homelab"
+        relabel_configs:
+          - source_labels: [__address__]
+            regex: "192.168.1.29:.*"
+            target_label: node
+            replacement: k3s-master
+          - source_labels: [__address__]
+            regex: "192.168.1.31:.*"
+            target_label: node
+            replacement: k3s-worker-01
+          - source_labels: [__address__]
+            regex: "192.168.1.32:.*"
+            target_label: node
+            replacement: k3s-worker-02

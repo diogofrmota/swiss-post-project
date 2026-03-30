@@ -1,0 +1,48 @@
+adminPassword: "admin"
+
+service:
+  type: NodePort
+  nodePort: 30030
+
+persistence:
+  enabled: false
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server.monitoring.svc.cluster.local
+        access: proxy
+        isDefault: true
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: "default"
+        orgId: 1
+        folder: "Pi Homelab"
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+dashboards:
+  default:
+    node-exporter-full:
+      gnetId: 1860       # Node Exporter Full — most popular community dashboard
+      revision: 37
+      datasource: Prometheus
+    node-exporter-simple:
+      gnetId: 13978      # Simple per-node CPU/RAM/disk overview
+      revision: 2
+      datasource: Prometheus
+
+grafana.ini:
+  server:
+    root_url: "%(protocol)s://%(domain)s:%(http_port)s/"
+  auth.anonymous:
+    enabled: false
