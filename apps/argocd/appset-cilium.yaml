@@ -9,7 +9,7 @@ metadata:
 spec:
   description: "Critical components"
   sourceRepos:
-    - "https://github.com/diogofrmota/tmp-homelab"
+    - "https://github.com/diogofrmota/swiss-post-project"
   destinations:
     - namespace: '*'
       server: https://kubernetes.default.svc
@@ -30,7 +30,7 @@ spec:
   goTemplateOptions: ["missingkey=error"]
   generators:
   - git:
-      repoURL: https://github.com/diogofrmota/tmp-homelab
+      repoURL: https://github.com/diogofrmota/swiss-post-project
       revision: HEAD
       directories:
       - path: 'infra/cilium'
@@ -40,7 +40,7 @@ spec:
     spec:
       project: "infra"
       source:
-        repoURL: https://github.com/diogofrmota/tmp-homelab
+        repoURL: https://github.com/diogofrmota/swiss-post-project
         targetRevision: HEAD
         path: '{{.path.path}}'
       destination:
