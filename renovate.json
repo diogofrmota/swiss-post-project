@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["custom.regex"],
+  "automerge": false,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["apps/cert-manager/kustomization\\.yaml$"],
+      "matchStrings": [
+        "https://github\\.com/cert-manager/cert-manager/releases/download/(?<currentValue>v[\\d\\.]+)/cert-manager\\.yaml"
+      ],
+      "depNameTemplate": "cert-manager/cert-manager",
+      "datasourceTemplate": "github-releases"
+    }
+  ]
+}
