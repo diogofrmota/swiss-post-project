@@ -9,7 +9,6 @@ Prometheus and Grafana run on a local minikube cluster on your laptop, scraping 
 - Your laptop is on the same network as the Pi nodes (`192.168.1.x`)
 - Node exporter running on all three Pi nodes (see main `installation.md` step 9)
 
----
 
 ## 1. Start Minikube
 
@@ -24,7 +23,6 @@ kubectl get nodes
 # Should show a single minikube node as Ready
 ```
 
----
 
 ## 2. Add Helm Repositories
 
@@ -34,15 +32,12 @@ helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 ```
 
----
 
 ## 3. Create the Monitoring Namespace
 
 ```bash
 kubectl create namespace monitoring
 ```
-
----
 
 ## 4. Install Prometheus
 
@@ -67,7 +62,6 @@ open http://localhost:9090/targets
 # All three Pi targets should show state=UP
 ```
 
----
 
 ## 5. Install Grafana
 
@@ -83,8 +77,6 @@ Verify Grafana is up:
 kubectl get pods -n monitoring
 # Wait for grafana pod to be Running
 ```
-
----
 
 ## 6. Access the Dashboards
 
@@ -117,7 +109,6 @@ Then open `http://localhost:3000` in your browser.
 
 > Change the password on first login.
 
----
 
 ## 7. Verify Dashboards
 
@@ -133,28 +124,6 @@ If the dashboards show "No data", check:
 kubectl port-forward -n monitoring svc/prometheus-server 9090:80
 # Then open http://localhost:9090/targets — all three Pi IPs should be UP
 ```
-
----
-
-## 8. Minikube Network Note
-
-Minikube runs inside a VM or container on your laptop. For it to reach `192.168.1.x` directly, your laptop must be on the same LAN as the Pi nodes and minikube must be able to route traffic out to your LAN.
-
-Test reachability from inside the cluster:
-
-```bash
-kubectl run nettest --rm -it --image=curlimages/curl --restart=Never -- \
-  curl http://192.168.1.29:9100/metrics | head -3
-```
-
-If this fails, minikube is not routing to your LAN. Fix it by using the `--driver=virtualbox` or `--driver=vmware` driver instead of Docker, or by adding a route:
-
-```bash
-# macOS — add a route so minikube VM can reach LAN
-sudo route add -net 192.168.1.0/24 $(minikube ip)
-```
-
----
 
 ## Teardown
 

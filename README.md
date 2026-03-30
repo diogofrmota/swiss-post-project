@@ -19,8 +19,8 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 | Service | URL | Deployed at |
 |---------|-----|-------------|
 | Argo CD | https://argocd.diogomota.com | Homelab Cluster |
-| Grafana | https://grafana.diogomota.com | Virtual Machine |
-| Prometheus | https://prometheus.diogomota.com | Virtual Machine |
+| Grafana | http://localhost:3000/ | Local Cluster |
+| Prometheus | http://localhost:9091/ | Local Cluster |
 
 Prometheus and Grafana run on a separate local cluster and scrape node-exporter from the Pi nodes over the local network.
 
@@ -40,9 +40,8 @@ All services are exposed via Cilium ingress with TLS certificates issued automat
 | <img src="media/exporter-logo.png" width="35" height="35"> | Node Exporter | Host-level metrics (scraped remotely) | Active |
 | <img src="media/prometheus-logo.png" width="35" height="35"> | Prometheus | Metrics & alerting | Active (separate cluster) |
 | <img src="media/grafana-logo.png" width="35" height="35"> | Grafana | Dashboards & observability | Active (separate cluster) |
-| <img src="media/gh-actions-logo.png" width="35" height="35"> | GitHub Actions | CI - build & push images | Inactive |
-| <img src="media/renovate-logo.png" width="35" height="35"> | Renovate Bot | Automated dependency updates | Inactive |
-| <img src="media/golang-logo.png" width="35" height="35"> | Golang | Custom scraper | Inactive |
+| <img src="media/gh-actions-logo.png" width="35" height="35"> | GitHub Actions | CI - build & push images | Active |
+| <img src="media/renovate-logo.png" width="35" height="35"> | Renovate Bot | Automated dependency updates | Active |
 
 ## Installation
 

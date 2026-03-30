@@ -1,5 +1,4 @@
 #!/bin/bash
-# Homelab Restart Script — swiss-post-project (k3s + Cilium + ArgoCD + cert-manager)
 set -e
 
 echo "Starting homelab restart..."

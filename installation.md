@@ -120,13 +120,11 @@ Verify it works:
 kubectl get nodes -o wide
 ```
 
-This is optional — all remaining steps in this guide assume you are running commands on the master node.
-
 ---
 
 ## 5. Install Cilium CLI
 
-The Cilium CLI release assets use `arm64` (not `aarch64` from `uname -m`), so the architecture must be hardcoded:
+The Cilium CLI release assets use `arm64`, so the architecture must be hardcoded:
 
 ```bash
 CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
