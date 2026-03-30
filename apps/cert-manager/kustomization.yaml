@@ -13,3 +13,18 @@ patches:
   target:
     kind: Deployment
     name: cert-manager
+- patch: |-
+    - op: add
+      path: /metadata/annotations
+      value:
+        argocd.argoproj.io/sync-options: RespectIgnoreDifferences=true
+        argocd.argoproj.io/ignore-differences: |
+          {
+            "kind": "Secret",
+            "name": "cloudflare-api-token",
+            "namespace": "cert-manager",
+            "jsonPointers": ["/data"]
+          }
+  target:
+    kind: Namespace
+    name: cert-manager

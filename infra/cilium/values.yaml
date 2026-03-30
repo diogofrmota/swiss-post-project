@@ -47,3 +47,28 @@ securityContext:
     - NET_ADMIN
     - SYS_ADMIN
     - SYS_RESOURCE
+
+argoCD:
+  syncOptions:
+    - RespectIgnoreDifferences=true
+    - ServerSideApply=true
+  ignoreDifferences:
+    - group: cilium.io
+      kind: CiliumIdentity
+      jsonPointers:
+        - /spec
+    - group: ""
+      kind: Secret
+      name: hubble-ca-cert
+      jsonPointers:
+        - /data
+    - group: ""
+      kind: Secret
+      name: hubble-relay-client-certs
+      jsonPointers:
+        - /data
+    - group: ""
+      kind: Secret
+      name: hubble-server-certs
+      jsonPointers:
+        - /data
