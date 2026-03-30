@@ -71,9 +71,10 @@ sudo reboot
 
 ```bash
 # On k3s-master (192.168.1.29)
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.31.4+k3s1" INSTALL_K3S_EXEC="server \
   --flannel-backend=none \
   --disable-network-policy \
+  --disable-kube-proxy \
   --disable=traefik \
   --disable=servicelb \
   --write-kubeconfig-mode 644" sh -
@@ -82,13 +83,14 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server \
 sudo cat /var/lib/rancher/k3s/server/node-token
 ```
 
-Flannel and the built-in service LB are disabled because Cilium replaces both.
+Flannel, kube-proxy, and the built-in service LB are disabled because Cilium replaces all three.
 
 ## 4. Join Worker Nodes
 
 ```bash
 # On k3s-worker-01 (192.168.1.31) and k3s-worker-02 (192.168.1.32)
-curl -sfL https://get.k3s.io | K3S_URL=https://192.168.1.29:6443 \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.31.4+k3s1" \
+  K3S_URL=https://192.168.1.29:6443 \
   K3S_TOKEN=<token-from-master> sh -
 ```
 
@@ -104,8 +106,8 @@ sudo kubectl get nodes
 ```bash
 # On the master or your local machine with kubeconfig access
 CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
-GOOS=$(go env GOOS)
-GOARCH=$(go env GOARCH)
+GOOS=$(uname -s | tr '[:upper:]' '[:lower:]')
+GOARCH=$(uname -m)
 curl -L --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-${GOOS}-${GOARCH}.tar.gz
 sudo tar -C /usr/local/bin -xzf cilium-${GOOS}-${GOARCH}.tar.gz
 rm cilium-${GOOS}-${GOARCH}.tar.gz

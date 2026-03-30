@@ -22,7 +22,7 @@ gatewayAPI:
 socketLB:
   hostNamespaceOnly: true
 k8sServiceHost: localhost
-k8sServicePort: 7445
+k8sServicePort: 6443
 kubeProxyReplacement: true
 hubble:
   ui:

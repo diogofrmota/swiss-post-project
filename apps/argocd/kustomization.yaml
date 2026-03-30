@@ -4,16 +4,12 @@ namespace: argocd
 
 resources:
 - namespace.yaml
-- https://raw.githubusercontent.com/argoproj/argo-cd/v3.1.13/manifests/install.yaml
+- https://raw.githubusercontent.com/argoproj/argo-cd/v3.3.6/manifests/install.yaml
 - httproute.yaml
 - appset-cilium.yaml
 - appset-apps.yaml
 
 configMapGenerator:
-- name: argocd-cm
-  literals:
-  - kustomize.buildOptions=--enable-alpha-plugins --enable-exec
-  behavior: merge
 - name: argocd-cmd-params-cm
   literals:
   - server.insecure=true
