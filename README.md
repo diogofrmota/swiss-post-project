@@ -3,7 +3,7 @@
 A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, managed fully via GitOps with Argo CD.
 
 <p align="center">
-  <img src="assets/cluster.jpeg" alt="Cluster" width="350">
+  <img src="media/cluster.jpeg" alt="Cluster" width="350">
 </p>
 
 ## Hardware
@@ -16,33 +16,33 @@ A production-grade Kubernetes homelab running on three Raspberry Pi 4B nodes, ma
 
 ## Dashboards
 
-| Service | URL |
-|---------|-----|
-| Argo CD | https://argocd.diogomota.com |
-| Grafana | https://grafana.diogomota.com |
-| Prometheus | https://prometheus.diogomota.com |
+| Service | URL | Deployed at |
+|---------|-----|-------------|
+| Argo CD | https://argocd.diogomota.com | Homelab Cluster |
+| Grafana | https://grafana.diogomota.com | Virtual Machine |
+| Prometheus | https://prometheus.diogomota.com | Virtual Machine |
 
-**Note:** Argo CD uses HTTPS with Let's Encrypt certificates. Access it at https://argocd.diogomota.com:30662 (port 30662 for HTTPS NodePort). Prometheus and Grafana run on a separate local cluster and scrape node-exporter from the Pi nodes over the local network.
+Prometheus and Grafana run on a separate local cluster and scrape node-exporter from the Pi nodes over the local network.
 
 All services are exposed via Cilium ingress with TLS certificates issued automatically by cert-manager (Let's Encrypt).
 
 ## Tech Stack
 
-| Tool | Purpose |
-|------|---------|
-| k3s | Lightweight Kubernetes distribution |
-| Argo CD | GitOps continuous delivery |
-| Helm | Package manager |
-| Kustomize | Manifest customisation |
-| Cilium | CNI, network policies, ingress |
-| cert-manager | Automatic TLS via Let's Encrypt |
-| Kyverno | Policy enforcement |
-| Node Exporter | Host-level metrics (scraped remotely) |
-| Prometheus | Metrics & alerting (separate cluster) |
-| Grafana | Dashboards & observability (separate cluster) |
-| GitHub Actions | CI - build & push images |
-| Renovate Bot | Automated dependency updates |
-| Golang | Custom scraper |
+| Logo | Tool | Purpose | Status |
+|------|------|---------|--------|
+| <img src="media/k3s-logo.png" width="35" height="35"> | k3s | Lightweight Kubernetes distribution | Active |
+| <img src="media/argo-logo.png" width="35" height="35"> | Argo CD | GitOps continuous delivery | Active |
+| <img src="media/helm-logo.png" width="35" height="35"> | Helm | Package manager | Active |
+| <img src="media/kustomize-logo.png" width="35" height="35"> | Kustomize | Manifest customisation | Active |
+| <img src="media/cilium-logo.png" width="35" height="35"> | Cilium | CNI, network policies, ingress | Active |
+| <img src="media/cert-logo.png" width="35" height="35"> | cert-manager | Automatic TLS via Let's Encrypt | Active |
+| <img src="media/kyverno-logo.png" width="35" height="35"> | Kyverno | Policy enforcement | Inactive due to RAM usage |
+| <img src="media/exporter-logo.png" width="35" height="35"> | Node Exporter | Host-level metrics (scraped remotely) | Active |
+| <img src="media/prometheus-logo.png" width="35" height="35"> | Prometheus | Metrics & alerting | Active (separate cluster) |
+| <img src="media/grafana-logo.png" width="35" height="35"> | Grafana | Dashboards & observability | Active (separate cluster) |
+| <img src="media/gh-actions-logo.png" width="35" height="35"> | GitHub Actions | CI - build & push images | Inactive |
+| <img src="media/renovate-logo.png" width="35" height="35"> | Renovate Bot | Automated dependency updates | Inactive |
+| <img src="media/golang-logo.png" width="35" height="35"> | Golang | Custom scraper | Inactive |
 
 ## Installation
 

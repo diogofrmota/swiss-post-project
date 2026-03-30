@@ -19,7 +19,7 @@ Complete guide to set up the Kubernetes homelab from bare metal to a fully GitOp
 
 ---
 
-## 1 — OS Installation (on each node)
+## 1. OS Installation (on each node)
 
 Flash **Ubuntu Server 64-bit 22.04 LTS** onto each SD card using the official Raspberry Pi Imager tool. Boot each Pi, then find its IP:
 
@@ -37,7 +37,7 @@ sudo hostnamectl set-hostname k3s-worker-02      # on 192.168.1.32
 
 ---
 
-## 2 — System Configuration (on each node)
+## 2. System Configuration (on each node)
 
 ### 2.1 Install essential utilities
 
@@ -67,423 +67,176 @@ sudo reboot
 
 ---
 
-## 3 — K3s Installation
-
-k3s is installed with Flannel, Traefik, servicelb, and kube-proxy **disabled** because Cilium replaces all of them.
-
-### 3.1 Master node
+## 3. Install k3s on the Master Node
 
 ```bash
-export SETUP_NODEIP=192.168.1.29
-export SETUP_CLUSTERTOKEN=<STRONG_TOKEN_HERE>
-
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.33.3+k3s1" \
-  INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
-  --disable=servicelb,traefik \
+# On k3s-master (192.168.1.29)
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server \
   --flannel-backend=none \
-  --disable-kube-proxy" \
-  K3S_TOKEN=$SETUP_CLUSTERTOKEN \
-  K3S_KUBECONFIG_MODE=644 sh -s -
-```
+  --disable-network-policy \
+  --disable=traefik \
+  --disable=servicelb \
+  --write-kubeconfig-mode 644" sh -
 
-Retrieve the node token for workers:
-
-```bash
+# Get the node token (needed to join workers)
 sudo cat /var/lib/rancher/k3s/server/node-token
 ```
 
-### 3.2 Each worker node
+Flannel and the built-in service LB are disabled because Cilium replaces both.
+
+## 4. Join Worker Nodes
 
 ```bash
-export MASTER_IP=192.168.1.29
-export NODE_IP=<THIS_WORKER_IP>       # 192.168.1.31 or 192.168.1.32
-export K3S_TOKEN=<TOKEN_FROM_MASTER>
-
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.33.3+k3s1" \
-  K3S_URL="https://$MASTER_IP:6443" \
-  K3S_TOKEN=$K3S_TOKEN \
-  INSTALL_K3S_EXEC="--node-ip $NODE_IP" sh -
+# On k3s-worker-01 (192.168.1.31) and k3s-worker-02 (192.168.1.32)
+curl -sfL https://get.k3s.io | K3S_URL=https://192.168.1.29:6443 \
+  K3S_TOKEN=<token-from-master> sh -
 ```
 
-### 3.3 Verify (on master)
+Verify from the master:
 
 ```bash
-kubectl get nodes -o wide
+sudo kubectl get nodes
+# All three nodes should appear (status may be NotReady until Cilium is installed)
 ```
 
-All three nodes will show `NotReady` — this is expected because there is no CNI yet. Cilium is installed in the next step.
-
-> **Important:** `kubectl` and `helm` commands must be run from the **master node** (`k3s-master`). The k3s API server only runs on the master, and the kubeconfig is automatically created at `/etc/rancher/k3s/k3s.yaml`. Running `kubectl` on a worker node without configuration will fail with `connection refused` on `localhost:8080`.
-
-### 3.4 Configure kubectl on worker nodes or a laptop (optional)
-
-If you want to run `kubectl` from a worker node or your local machine instead of SSH-ing into the master, copy the kubeconfig and update the server address:
+## 5. Install Cilium CLI
 
 ```bash
-# On the master — print the kubeconfig
-sudo cat /etc/rancher/k3s/k3s.yaml
+# On the master or your local machine with kubeconfig access
+CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+GOOS=$(go env GOOS)
+GOARCH=$(go env GOARCH)
+curl -L --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-${GOOS}-${GOARCH}.tar.gz
+sudo tar -C /usr/local/bin -xzf cilium-${GOOS}-${GOARCH}.tar.gz
+rm cilium-${GOOS}-${GOARCH}.tar.gz
+```
 
-# On the worker or laptop — save it and fix the server address
+## 6. Deploy Argo CD
+
+```bash
+# Copy kubeconfig to your local machine if needed
 mkdir -p ~/.kube
-# Paste the kubeconfig content into ~/.kube/config, then replace the
-# loopback address with the master's IP:
-sed -i 's|server: https://127.0.0.1:6443|server: https://192.168.1.29:6443|' ~/.kube/config
+scp pi@192.168.1.29:/etc/rancher/k3s/k3s.yaml ~/.kube/config
+# Edit ~/.kube/config and replace 127.0.0.1 with 192.168.1.29
+
+# Bootstrap Argo CD using kustomize
+kubectl apply -k apps/argocd/
+
+# Wait for all pods to be ready
+kubectl -n argocd rollout status deployment argocd-server
+
+# Get the initial admin password
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+echo
 ```
 
-Verify it works:
+## 7. Create Required Secrets
+
+These secrets are not stored in Git for security reasons. Create them manually before syncing the relevant applications.
+
+### Cloudflare API Token (for cert-manager DNS01 challenges)
 
 ```bash
+kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl create secret generic cloudflare-api-token \
+  --namespace cert-manager \
+  --from-literal=api-token=<YOUR_CLOUDFLARE_API_TOKEN>
+```
+
+To create the token in Cloudflare: go to My Profile > API Tokens > Create Token > use the "Edit zone DNS" template, scope it to your zone (`diogomota.com`).
+
+## 8. Sync Applications via Argo CD
+
+Once Argo CD is running, it will automatically detect the ApplicationSets and begin syncing:
+
+- `infra` project: Cilium (CNI, Gateway API, L2 announcements, IP pool)
+- `apps` project: cert-manager, node-exporter, and argocd itself
+
+Monitor sync status:
+
+```bash
+# Using the CLI
+kubectl -n argocd get applications
+
+# Or log in to the Argo CD UI (once DNS is configured — see next section)
+```
+
+## 9. Local DNS Configuration
+
+The shared Cilium Gateway gets a LoadBalancer IP from the `CiliumLoadBalancerIPPool`. To access services like `argocd.diogomota.com` from your laptop (which is on the same network), you need to resolve that hostname to the gateway's LB IP.
+
+### Find the Gateway's LoadBalancer IP
+
+```bash
+kubectl get gateway shared-gateway -n default -o jsonpath='{.status.addresses[0].value}'
+```
+
+This should return an IP from your pool (e.g. `192.168.1.200` if you've updated the pool to use your local subnet).
+
+### Option A: /etc/hosts (quickest, per-machine)
+
+Add entries to `/etc/hosts` on your laptop:
+
+```bash
+# Linux / macOS
+sudo nano /etc/hosts
+
+# Add a line (replace with your actual LB IP):
+192.168.1.200   argocd.diogomota.com
+```
+
+On Windows, edit `C:\Windows\System32\drivers\etc\hosts` as Administrator.
+
+### Option B: Local DNS server (recommended for multiple devices)
+
+If your router supports custom DNS entries (e.g. Pi-hole, pfSense, OPNsense, Unbound), add a DNS override:
+
+```
+argocd.diogomota.com  →  192.168.1.200
+```
+
+This way every device on the network can resolve the hostname without per-machine configuration.
+
+### Option C: Wildcard DNS (best for many services)
+
+If your local DNS supports wildcards, add a single record:
+
+```
+*.diogomota.com  →  192.168.1.200
+```
+
+This covers `argocd.diogomota.com`, any future services, and avoids updating DNS for each new HTTPRoute.
+
+## 10. Post-Install Verification
+
+```bash
+# Check all nodes are Ready
 kubectl get nodes -o wide
-```
 
-This is optional — all remaining steps in this guide assume you are running commands on the master node.
+# Check Cilium status
+cilium status
 
----
+# Check that the Gateway has an external IP
+kubectl get gateway -A
 
-## 4 — Install Helm
-
-Helm is needed to bootstrap Cilium and Argo CD before GitOps takes over.
-
-```bash
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
-./get_helm.sh
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-helm version
-```
-
----
-
-## 5 — Bootstrap Cilium (CNI)
-
-Since k3s was installed without Flannel and kube-proxy, the nodes will stay `NotReady` until a CNI is installed. Cilium must be bootstrapped manually via Helm before Argo CD can start — Argo CD pods themselves need a working network.
-
-Once Argo CD is running, its Cilium Application (sync-wave 0) will adopt and manage this Helm release going forward.
-
-### 5.1 Install Cilium
-
-> **Critical:** The values here **must exactly match** `applications/cilium/application.yaml` so that Argo CD can adopt the release cleanly without creating duplicate or conflicting resources.
-
-```bash
-helm repo add cilium https://helm.cilium.io/
-helm repo update
-
-helm install cilium cilium/cilium --version 1.19.2 \
-  --namespace kube-system \
-  --set kubeProxyReplacement=true \
-  --set k8sServiceHost=192.168.1.29 \
-  --set k8sServicePort=6443 \
-  --set ipam.operator.clusterPoolIPv4PodCIDRList="10.42.0.0/16" \
-  --set bpf.masquerade=true \
-  --set hubble.enabled=false \
-  --set ingressController.enabled=true \
-  --set ingressController.default=true \
-  --set ingressController.loadbalancerMode=shared \
-  --set l2announcements.enabled=true \
-  --set loadBalancer.mode=snat \
-  --set loadBalancer.l7.enabled=true \
-  --set loadBalancer.algorithm=maglev \
-  --set loadBalancer.cidr="{192.168.1.200-192.168.1.220}" \
-  --set operator.replicas=1 \
-  --set resources.requests.cpu=50m \
-  --set resources.requests.memory=100Mi \
-  --set resources.limits.cpu=300m \
-  --set resources.limits.memory=256Mi \
-  --set operator.resources.requests.cpu=20m \
-  --set operator.resources.requests.memory=32Mi \
-  --set operator.resources.limits.cpu=100m \
-  --set operator.resources.limits.memory=128Mi
-```
-
-### 5.2 Wait for Cilium and nodes to become Ready
-
-```bash
-# Watch Cilium pods come up
-kubectl get pods -n kube-system -l app.kubernetes.io/part-of=cilium -w
-
-# Verify Cilium is healthy
-kubectl -n kube-system exec ds/cilium -- cilium status --brief
-
-# All nodes should now show Ready
-kubectl get nodes -o wide
-```
-
-All three nodes should transition from `NotReady` to `Ready` once the Cilium agent is running on each.
-
-### 5.3 Configure Cilium L2 Announcement
-
-Create a Cilium L2 announcement policy to advertise LoadBalancer IPs:
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: cilium.io/v2alpha1
-kind: CiliumL2AnnouncementPolicy
-metadata:
-  name: home-l2-policy
-  namespace: kube-system
-spec:
-  serviceSelector:
-    matchLabels: {}
-  nodeSelector:
-    matchLabels:
-      kubernetes.io/os: linux
-  interfaces:
-    - eth0
-EOF
-```
-
-This policy will announce LoadBalancer IPs from all nodes via ARP/NDP. You can label your services with cilium-l2-announce: "true" to have them announced, or modify the policy to match all LoadBalancer services.
-
----
-
-## 6 — Create Required Secrets
-
-This secret must exist before Argo CD syncs the applications.
-
-### Cloudflare API token (for DNS-01 challenges)
-
-The Cloudflare API token needs `Zone:DNS:Edit` permissions. cert-manager uses it to create TXT records for Let's Encrypt DNS-01 validation.
-
-```bash
-kubectl create namespace cert-manager
-
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: cloudflare-api-token
-  namespace: cert-manager
-type: Opaque
-stringData:
-  api-token: <CLOUDFLARE_API_TOKEN>
-EOF
-```
-
----
-
-## 7 — Install Argo CD and Bootstrap GitOps
-
-> **Why Helm?** Argo CD must be bootstrapped via the **same Helm chart and values** that the Argo CD Application (`applications/argocd/application.yaml`) uses. If the bootstrap uses raw manifests while the Application uses a Helm chart, the two create resources with different labels and annotations, resulting in duplicate pods that can never roll out.
-
-The `scripts/argocd-setup.sh` script handles everything:
-
-```bash
-chmod +x scripts/argocd-setup.sh
-./scripts/argocd-setup.sh
-```
-
-What the script does:
-
-1. Creates the `argocd` namespace.
-2. Adds the Argo Helm repo and installs Argo CD via the `argo-cd` Helm chart (version pinned in the script to match `applications/argocd/application.yaml`).
-3. Waits for the `argocd-server` deployment to become ready.
-4. Applies `gitops-setup/root-app.yaml` — the App of Apps that points at `applications/`.
-5. Prints the initial admin password and a port-forward command.
-
-After the root app syncs, Argo CD will automatically deploy every application defined under `applications/` in dependency order (controlled by `argocd.argoproj.io/sync-wave` annotations). Because the bootstrap used the same Helm chart and values, Argo CD will recognise the existing resources and adopt them cleanly.
-
-### Configure DNS / etc/hosts
-
-For local access to Argo CD and other services, add the following entries to your `/etc/hosts` file:
-
-```bash
-# Add these lines to /etc/hosts
-echo "192.168.1.29 argocd.diogomota.com" | sudo tee -a /etc/hosts
-echo "(ip for this cluster) grafana.diogomota.com" | sudo tee -a /etc/hosts
-echo "(ip for this cluster) prometheus.diogomota.com" | sudo tee -a /etc/hosts
-```
-
-### Access Argo CD
-Argo CD is exposed via NodePort. Get the NodePort and access the UI:
-
-```bash
-# Get the NodePort
-kubectl get svc argocd-server -n argocd
-
-# Access Argo CD UI
-# HTTP: http://argocd.diogomota.com:<NODEPORT>
-# Example: http://argocd.diogomota.com:30814
-
-# Login with admin and the initial password:
-kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d
-echo ""
-```
-
-### Change the Argo CD admin password
-
-Generate a bcrypt hash for your new password, then patch the secret:
-
-```bash
-kubectl -n argocd patch secret argocd-secret -p \
-  '{"stringData": {
-    "admin.password": "<BCRYPT_HASH>",
-    "admin.passwordMtime": "'$(date +%FT%T%Z)'"
-  }}'
-```
-
----
-
-## 8 — Verify the Deployment
-
-### 8.1 Monitor Argo CD sync
-
-```bash
-kubectl get applications -n argocd -w
-```
-
-Wait for all applications to show **Synced** and **Healthy**.
-
-### 8.2 Access Argo CD
-
-```bash
-kubectl port-forward svc/argocd-server -n argocd 8080:443
-```
-
-Open `https://localhost:8080`, log in with user `admin` and the password from step 7.
-
-### 8.3 Check Cilium
-
-```bash
-kubectl -n kube-system exec ds/cilium -- cilium status --brief
-```
-
-### 8.4 Check Cilium Loadbalancer IP allocation
-
-```bash
-kubectl get svc -A | grep LoadBalancer
-```
-
-IPs should be assigned from the `192.168.1.200-192.168.1.220` pool.
-
-### 8.5 Check certificates
-
-```bash
+# Check cert-manager is issuing certificates
 kubectl get certificates -A
-kubectl get clusterissuer
+kubectl get clusterissuer letsencrypt-prod
+
+# Check Argo CD applications are synced
+kubectl -n argocd get applications
+
+# Test access from your laptop (after DNS is configured)
+curl -k https://argocd.diogomota.com
 ```
-
-The `letsencrypt-prod` ClusterIssuer should show `Ready: True`. Certificates use DNS-01 validation via Cloudflare, so they work without exposing any ports to the internet.
-
-### 8.6 Check Kyverno policies
-
-```bash
-kubectl get clusterpolicy
-```
-
-All four policies should be listed and active.
-
-> **Note:** Kyverno is disabled by default to conserve RAM on 2GB Pi nodes. See step 11 if you want to enable it.
-
-### 8.7 Check node-exporter
-
-```bash
-kubectl get pods -n monitoring -o wide
-```
-
-One pod should be running on each node. Verify metrics are reachable from your network:
-
-```bash
-curl http://192.168.1.29:9100/metrics | head
-curl http://192.168.1.31:9100/metrics | head
-curl http://192.168.1.32:9100/metrics | head
-```
-
----
-
-## 9 — Configure DNS
-
-Point your ingress hostname at the Cilium loadbalancer IP (or configure `/etc/hosts` for local access):
-
-```
-192.168.1.210   argocd.diogomota.com
-```
-
----
-
-## 10 — Remote Prometheus Configuration
-
-Prometheus and Grafana run on a separate cluster on the local network. Add the following scrape targets to your remote Prometheus configuration so it scrapes node-exporter from each Pi:
-
-```yaml
-scrape_configs:
-  - job_name: 'pi-cluster-node-exporter'
-    static_configs:
-      - targets:
-          - '192.168.1.29:9100'
-          - '192.168.1.31:9100'
-          - '192.168.1.32:9100'
-        labels:
-          cluster: pi-homelab
-```
-
----
-
-## 11 — Kyverno Policies (Optional)
-
-Kyverno is disabled in this setup to conserve RAM on the Raspberry Pi nodes. However, the policy configuration files are kept in the repository (`policies/`) for reference. If you have more memory available, you can enable Kyverno by uncommenting `applications/kyverno/application.yaml` and adding it to `applications/kustomization.yaml`.
-
----
-
-## 12 — Accept Self-Signed Certificates (optional)
-
-If using self-signed certificates instead of Let's Encrypt, you can add them to your system trust store to avoid browser warnings.
-
-### Linux
-
-```bash
-kubectl get secret argocd-tls -n argocd -o jsonpath='{.data.tls\.crt}' | base64 -d > argocd.crt
-sudo cp argocd.crt /usr/local/share/ca-certificates/
-sudo update-ca-certificates
-```
-
-### Windows
-
-1. Export the certificate as shown above
-2. Double-click the `.crt` file
-3. Click "Install Certificate" → "Local Machine" → "Trusted Root Certification Authorities"
-
----
-
-## Memory Optimisation Notes
-
-All resource limits have been tuned for 2GB Raspberry Pi 4B nodes. Key decisions:
-
-- **Prometheus and Grafana offloaded** — only node-exporter runs on the Pi cluster (32Mi limit per node). The full monitoring stack runs on a separate local cluster with more resources.
-- **Hubble disabled entirely** — no local Prometheus to consume the metrics.
-- **Argo CD components reduced** — server and repo-server capped at 192Mi, controller at 384Mi, redis and notifications at 48Mi each.
-- **Cilium agent capped at 256Mi**, operator at 128Mi.
-- **cert-manager** runs under 96Mi limits.
-- **Kyverno disabled** — saves ~300Mi of RAM across admission and background controllers.
-
----
 
 ## Troubleshooting
 
-### Duplicate pods / stuck rollouts in Argo CD
+**Nodes stuck in NotReady**: Cilium may not be installed yet. Check `kubectl get pods -n kube-system` for Cilium agent pods.
 
-If you see two versions of Argo CD pods (e.g. two `argocd-redis` pods, one running and one stuck in `Init:0/1`), it means the bootstrap method and the Argo CD Application are using different installation approaches. Fix by deleting the namespace and re-running the Helm-based setup script:
+**Certificate not issuing**: Ensure the `cloudflare-api-token` secret exists in the `cert-manager` namespace and that the token has DNS edit permissions for your zone.
 
-```bash
-kubectl delete namespace argocd
-./scripts/argocd-setup.sh
-```
+**Cannot reach the LB IP from your laptop**: Make sure the IP pool uses addresses in the same subnet as your nodes (`192.168.1.x`), not a different subnet like `192.168.200.x`. L2 announcements only work within the same broadcast domain.
 
-### Nodes stuck on NotReady
-
-Cilium is the CNI — without it, nodes cannot schedule pods. Verify Cilium pods are running:
-
-```bash
-kubectl get pods -n kube-system -l app.kubernetes.io/part-of=cilium
-```
-
-If no Cilium pods exist, re-run step 5.
-
-### OOMKilled pods
-
-On 2GB nodes, memory is tight. Check which pods are consuming the most:
-
-```bash
-kubectl top pods -A --sort-by=memory
-```
-
-Consider disabling non-essential workloads or tightening resource limits.
+**Argo CD OOM crashes**: If you're using the HA manifest on low-memory nodes, switch to the non-HA manifest in `apps/argocd/kustomization.yaml`.
