@@ -29,6 +29,8 @@ patches:
       replicas: 1
       template:
         spec:
+          nodeSelector:
+            node-role.kubernetes.io/worker: "true"
           containers:
           - name: argocd-repo-server
             resources:
@@ -48,6 +50,8 @@ patches:
     spec:
       template:
         spec:
+          nodeSelector:
+            node-role.kubernetes.io/worker: "true"
           containers:
           - name: argocd-server
             resources:
@@ -78,3 +82,29 @@ patches:
   target:
     kind: Deployment
     name: argocd-application-controller
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: argocd-redis
+    spec:
+      template:
+        spec:
+          nodeSelector:
+            node-role.kubernetes.io/worker: "true"
+  target:
+    kind: Deployment
+    name: argocd-redis
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: argocd-dex-server
+    spec:
+      template:
+        spec:
+          nodeSelector:
+            node-role.kubernetes.io/worker: "true"
+  target:
+    kind: Deployment
+    name: argocd-dex-server
